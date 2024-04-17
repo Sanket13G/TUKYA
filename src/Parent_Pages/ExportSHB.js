@@ -1799,7 +1799,7 @@ export default function ExportSHB() {
     getConsoleData();
   };
 
-  //TP
+  //TP  and PCTM
   const closeModalforcustomtp = () => {
     setIsModalOpenforCustomTp(false);
     setgetExportdataForCTP([]);
