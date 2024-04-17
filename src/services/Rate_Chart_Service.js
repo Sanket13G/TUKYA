@@ -667,7 +667,7 @@ class Rate_Chart_Service {
     });
   };
 
-
+// Added
   addPersonalImport(compid, bid, username, import2) {
     return axios.post(`${import_url}${compid}/${bid}/${username}/addPersonal`, import2);
   }
