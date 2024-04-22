@@ -17,12 +17,143 @@ const ExternalUser_url = `http://${ipaddress}externalParty/`
 const importHeavy_url = `http://${ipaddress}importHeavy/`
 const newreprentative_url = `http://${ipaddress}NewReprentative/`
 const importnew_url = `http://${ipaddress}import/`
+const preImportUrl = `http://${ipaddress}preImport/`
 
 class Rate_Chart_Service {
 
 
 
+  AddExtendedTarrif(companyId, branchId, user,extendedTarrif) {
+    return axios.post(`${tarrif_url}AddextendedTarrifByPartyId`,extendedTarrif,
+      {
+        params:
+        {
+          companyId: companyId,
+          branchId: branchId,
+          user: user        
+        }
+      });
+  };
 
+  getExtendedTarrif(companyId, branchId, tarrif, ammndNo, serviceId, partyId) {
+    return axios.get(`${tarrif_url}extendedTarrifByPartyId`,
+      {
+        params:
+        {
+          companyId: companyId,
+          branchId: branchId,
+          tarrif: tarrif,
+          ammndNo: ammndNo,
+          serviceId: serviceId,
+          partyId: partyId
+        }
+      });
+  };
+
+  // 
+  addPreImportToImport(companyid, branchId, user, transId2, mawb2, hawb2, sir2) {
+    return axios.get(`${preImportUrl}addPreImportToImport`,
+      {
+        params: {
+          companyId: companyid,
+          branchId: branchId,
+          transId: transId2,
+          MAWB: mawb2,
+          HAWB: hawb2,
+          sirNo: sir2,
+          user: user
+        }
+      });
+  }
+
+
+
+  SearchPreImports(params) {
+    return axios.get(`${preImportUrl}search`, params)
+  };
+
+  SearchPreImportsforparty(params, id, type) {
+    return axios.get(`${preImportUrl}searchbylogintype/${id}/${type}`, params)
+  }
+
+  SearchPreImportsforCHA(params, id, type) {
+    return axios.get(`${preImportUrl}searchbylogintype/${id}/${type}`, params)
+  }
+
+  SearchPreImportsforConsole(params, id, type) {
+    return axios.get(`${preImportUrl}searchbylogintype/${id}/${type}`, params)
+  }
+
+  getByMAWBNoPre(compId, branchId, mawbno) {
+    return axios.get(`${preImportUrl}getPreImportsOfMawb`, {
+      params:
+      {
+        compId: compId,
+        branchId: branchId,
+        mawbno: mawbno
+      }
+    });
+  }
+
+
+  GetByMAWBandHAWBPre(compid, bid, transId, MAWB, HAWB, sirNo) {
+    // return axios.get(`${import_url}${compid}/${bid}/${transId}/${MAWb}/${HAWB}/${sirNo}/getSingleImportByNew`);
+
+    return axios.get(`${preImportUrl}getSinglePreImportByNew`, {
+      params: {
+        compid: compid,
+        branchId: bid,
+        transId: transId,
+        MAWB: MAWB,
+        HAWB: HAWB,
+        sirNo: sirNo
+      }
+    });
+  }
+  deletePreimportofmawb(compid, bid, transId, MAWb, HAWB, sirNo) {
+    return axios.delete(`${preImportUrl}Predelete`,
+      {
+        params:
+        {
+          compid: compid,
+          bid: bid,
+          transId: transId,
+          MAWb: MAWb,
+          HAWB: HAWB,
+          sirNo: sirNo
+        }
+      });
+  }
+
+
+
+
+
+
+
+  // Pre Import 
+
+  addPreImport(compid, bid, username, import2) {
+    return axios.post(`${preImportUrl}addPreImport`, import2,
+      {
+        params: {
+          companyId: compid,
+          branchId: bid,
+          user: username
+        }
+      });
+  }
+
+  updatePreImport(compid, bid, username, import2) {
+    return axios.put(`${preImportUrl}modifyPreupdate`, import2,
+      {
+        params: {
+          companyId: compid,
+          branchId: bid,
+          user: username
+        }
+      });
+  }
 
 
 

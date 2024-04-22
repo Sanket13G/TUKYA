@@ -65,41 +65,16 @@ function Payment_and_bill() {
 
 
 
-  const findBillingTransaction2222 = async () => {
 
-    setcombinewResults5([]);
-    setLoading(true);
-    try {
-      const results = await InviceService.getBillingTransactionAfter(searchCriteria);
-      if (!results.data || results.data.length === 0) {
-        toast.info('No data found', {
-          position: toast.POSITION.TOP_CENTER,
-          autoClose: 600,
-        });
-      } else {
-        // setcombinewResults(results);
-        setcombinewResults5(results.data);
-      }
-    } catch (error) {
-      toast.error('Something went wrong', {
-        position: toast.POSITION.TOP_CENTER,
-        autoClose: 600,
-      });
-    }
-    finally {
-      setLoading(false);
-    }
-  };
 
 
 
 
 
   useEffect(() => {
-    // SearchInvoiceHistry1();
     findPartiesAll();
     findPartiesNew();
-  }, [])
+  }, []);
 
 
 
@@ -263,53 +238,19 @@ function Payment_and_bill() {
 
   function calculateTotalRateForPageForPredefined(currentItems) {
     return currentItems.reduce((acc, record) => {
-      const importRate = record.importRate || 0;
-      const exportRate = record.exportRate || 0;
-      const importScRate = record.importScRate || 0;
-      const importPcRate = record.importPcRate || 0;
-      const importHeavyRate = record.importHpRate || 0;
-      const exportScRate = record.exportScRate || 0;
-      const exportPcRate = record.exportPcRate || 0;
-      const exportHeavyRate = record.exportHpRate || 0;
-      const HolidayRate = record.holidayRate || 0;
-      const importpenalty = record.importPenalty || 0;
-      const exportpenalty = record.exportPenalty || 0;
-      const importSubRate = record.importSubRate || 0;
-      const exportSubRate = record.exportSubRate || 0;
-      const demuragesRate = record.demuragesRate || 0;
-      return acc + importRate + demuragesRate + exportRate + importSubRate + exportSubRate + HolidayRate + importScRate + importPcRate + importHeavyRate + exportScRate + exportPcRate + exportHeavyRate + importpenalty + exportpenalty;
+      const totalInvoiceAmount = record.totalInvoiceAmount || 0;
+      return acc + totalInvoiceAmount;
     }, 0);
   }
-
-
-  function calculateNiptNopPreDefined(current) {
-    return current.reduce((acc, record) => {
-      const niptPackages = record.niptPackages || 0;
-
-      return acc + niptPackages;
-
-    }, 0);
-  };
-
 
   useEffect(() => {
     // Calculate the total rate for the current page
     const totalRateForPage = calculateTotalRateForPageForPredefined(currentItems5);
-
-    const totalNiptPackages = calculateNiptNopPreDefined(currentItems5);
-
-    setNiptpackages2(totalNiptPackages);
     // Update the total rate state
     setTotalRate2(totalRateForPage);
-  }, [currentItems5]);
-
-
-  useEffect(() => {
-    // Calculate the total rate for the current page
-    const totalRateForPage = calculateTotalRateForPageForPredefined(combinewResults5);
-
+    const totalRateForPageTotal = calculateTotalRateForPageForPredefined(combinewResults5);
     // Update the total rate state
-    setTotalAllRate2(totalRateForPage);
+    setTotalAllRate2(totalRateForPageTotal);
   }, [currentItems5]);
 
 
@@ -426,26 +367,22 @@ function Payment_and_bill() {
   };
 
 
-  const {
-    jwtToken,
-    userId,
-    username,
+  const {    
+    userId,    
     branchId,
-    companyid,
-    role,
-    companyname,
-    branchname,
+    companyid,   
     logintype,
-    logintypeid,
-
-    login,
-    logout,
+    logintypeid
   } = useContext(AuthContext);
 
 
   useEffect(() => {
-    findParties();
-    findPartiesByInvoiceType();
+    if (logintype === 'Party') {
+      SearchInvoiceHistry1();
+    } else {
+      findParties();
+      findPartiesByInvoiceType();
+    }
   }, []);
 
 
@@ -1416,60 +1353,6 @@ function Payment_and_bill() {
   };
 
 
-  const addAdvance = async (partyId) => {
-
-    const newErrors = {};
-
-    if (!paymentMode) {
-      newErrors['paymentMode'] = 'paymentMode is required.';
-    }
-
-    if (paymentMode === 'NF' || paymentMode === 'UP') {
-      if (!transactionAmt) {
-        newErrors['transactionAmt'] = 'transactionAmt is required.';
-      }
-      if (!transactionNo) {
-        newErrors['transactionNo'] = 'transactionNo is required.';
-      }
-      if (!transactionDate) {
-        newErrors['transactionDate'] = 'transactionDate is required.';
-      }
-    }
-
-    if (paymentMode === 'CQ') {
-      if (!chequeNo) {
-        newErrors['chequeNo'] = 'chequeNo is required.';
-      }
-      if (!chequeDate) {
-        newErrors['chequeDate'] = 'chequeDate is required.';
-      }
-      if (!transbankName) {
-        newErrors['transbankName'] = 'Bank name is required.';
-      }
-      if (!transactionAmt) {
-        newErrors['transactionAmt'] = 'transactionAmt is required.';
-      }
-    }
-
-    if (paymentMode === 'CA') {
-      if (!transactionAmt) {
-        newErrors['transactionAmt'] = 'transactionAmt is required.';
-      }
-    }
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
-
-    const response = await InviceService.addAdvamce(companyid, branchId, partyId, FinTranceData);
-    toast.success('Advance Amount Added Successfully !', {
-      position: toast.POSITION.TOP_CENTER,
-      autoClose: 600,
-    });
-    getAllAdvanceReceipts(response.data.partyId);
-    await getTransByReceiptId(response.data.partyId, response.data.transId);
-  };
 
 
 
@@ -1479,7 +1362,7 @@ function Payment_and_bill() {
       setDocType(res.data.docType);
       setTransDate(res.data.transDate);
       setPartyId(res.data.partyId);
-      setPaymentMode(res.data.paymentMode);
+      // setPaymentMode(res.data.paymentMode);
       setChequeNo(res.data.chequeNo);
       setChequeDate(res.data.chequeDate);
       setBankName(res.data.bankName);
@@ -1541,12 +1424,12 @@ function Payment_and_bill() {
   // Function to handle individual checkbox change
   const handleRowCheckboxChange = (index, invoiceNO) => {
     const isChecked = selectedItems.some((item) => item.invoiceNO === invoiceNO);
-  
+
     if (isChecked) {
       // Remove the invoice from selectedItems and invoiceNoList
       const updatedSelectedItems = selectedItems.filter((item) => item.invoiceNO !== invoiceNO);
       const updatedInvoiceNoList = invoiceNoList.filter((no) => no !== invoiceNO);
-  
+
       setSelectedItems(updatedSelectedItems);
       setInvoiceNoList(updatedInvoiceNoList);
     } else {
@@ -1555,7 +1438,7 @@ function Payment_and_bill() {
       setInvoiceNoList([...invoiceNoList, invoiceNO]);
     }
   };
-  
+
 
   useEffect(() => {
     setSelectAll(selectedItems.length === InvoicePayment.length);
@@ -1576,9 +1459,6 @@ function Payment_and_bill() {
 
   const getTransByPartyId = async (partyId) => {
     const response = await InviceService.getTransIdByPartyId(companyid, branchId, partyId);
-
-    // console.log(partyId);
-    // console.log(response.data);
     setAdvAmt(response.data.advAmt);
     setBalAdvAmt(response.data.balAdvAmt);
 
@@ -1586,10 +1466,47 @@ function Payment_and_bill() {
   }
 
 
+  // Save Advance Amount
+  const addAdvance = async (partyId) => {
+    if (
+      !paymentMode.NEFT &&
+      !paymentMode.UPI &&
+      !paymentMode.Cheque &&
+      !paymentMode.Cash &&
+      !paymentMode.Advance
+    ) {
+      toast.error('Please Select Payment Mode!', {
+        position: toast.POSITION.TOP_CENTER,
+        autoClose: 700,
+      });
+      return;
+    }
 
-  const addAdvanceAmount = () => {
+    const isValid = validateForm();
 
-
+    if (!isValid) {
+      toast.error('Oops something went wrong!', {
+        position: toast.POSITION.TOP_CENTER,
+        autoClose: 900,
+      });
+      return;
+    }
+    setLoading(true);
+    try {
+      const response = await InviceService.addAdvamce(companyid, branchId, partyId, userId, FinTranceDTLData, FinTranceData);
+      toast.success('Advance Amount Added Successfully !', {
+        position: toast.POSITION.TOP_CENTER,
+        autoClose: 600,
+      });
+      getAllAdvanceReceipts(response.data.partyId);
+      await getTransByReceiptId(response.data.partyId, response.data.transId);
+    }
+    catch {
+      console.log("error");
+    }
+    finally {
+      setLoading(false);
+    }
   };
 
 
@@ -1604,13 +1521,6 @@ function Payment_and_bill() {
       setInvoiceDataHistory1(response.data);
     }
   };
-
-
-
-
-
-
-
 
 
 
@@ -1658,14 +1568,25 @@ function Payment_and_bill() {
   const [partiesAll, setPartiesAll] = useState([]);
   const [selectedPartyAll, setSelectedPartyAll] = useState(null);
   const [selectedPartyAdvance, setSelectedPartyAdvance] = useState(null);
-
+  const [selectedPartyTransaction, setSelectedPartyTransaction] = useState(null);
 
   const clearAdvance = () => {
     makeAdvanceTabEmpty();
     setAdvanceData([]);
     setSelectedPartyAdvance(null);
     setErrors([]);
+    clearReceipt();
   };
+
+
+  const clearReceipt = () => {
+    makeAdvanceTabEmpty();
+    setInvoicePayment([]);
+    setSelectedPartyPayment(null);
+    setErrors([]);
+    clearAdvance();
+  };
+
 
   const handlePartyAdvance = async (selectedOption) => {
     setErrors(prevErrors => selectedOption ? { ...prevErrors, selectedPartyAdvance: '' } : { ...prevErrors, selectedPartyAdvance: 'Please Select Party' });
@@ -1676,6 +1597,88 @@ function Payment_and_bill() {
       setAdvanceData([]);
     }
   };
+
+
+
+
+
+
+
+
+
+  // Billing Transaction
+  const handlePartyTransaction = async (selectedOption) => {
+    setSelectedPartyTransaction(selectedOption ? selectedOption : null);
+    setSearchCriteria({ ...searchCriteria, PartyId: selectedOption ? selectedOption.value : null });
+
+    if (!selectedOption) {
+      setcombinewResults5([]);
+    }
+  };
+
+
+  const BillingTransaction = async () => {
+    setCurrentPage5(1);
+    setcombinewResults5([]);
+    setLoading(true);
+    try {
+      const results = await InviceService.getBillingTransactionAfter(searchCriteria);
+      if (!results.data || results.data.length === 0) {
+        toast.info('No data found', {
+          position: toast.POSITION.TOP_CENTER,
+          autoClose: 600,
+        });
+      } else {
+        setcombinewResults5(results.data);
+      }
+    } catch (error) {
+      toast.error('Something went wrong', {
+        position: toast.POSITION.TOP_CENTER,
+        autoClose: 600,
+      });
+    }
+    finally {
+      setLoading(false);
+    }
+  };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   const handlePartyPayment = async (selectedOption) => {
     setErrors(prevErrors => selectedOption ? { ...prevErrors, selectedPartyPayment: '' } : { ...prevErrors, selectedPartyPayment: 'Please Select Party' });
@@ -1929,7 +1932,7 @@ function Payment_and_bill() {
     try {
       const response = await InviceService.downloadReceipt(companyid, branchId, partyId, receiptId);
 
-     
+
       if (response.status === 200) {
         const pdfData = response.data;
         const pdfBlob = new Blob([pdfData], { type: 'application/pdf' });
@@ -1955,13 +1958,12 @@ function Payment_and_bill() {
           position: toast.POSITION.TOP_CENTER,
           autoClose: 800,
         });
-      } else {        
-        console.error("Error downloading PDF:", response.statusText);        
+      } else {
+        console.error("Error downloading PDF:", response.statusText);
       }
     } catch (error) {
-      console.error("Error downloading PDF:", error);      
-    }finally
-    {
+      console.error("Error downloading PDF:", error);
+    } finally {
       setLoading(false);
     }
   };
@@ -2126,7 +2128,7 @@ function Payment_and_bill() {
 
                       </td>
 
-                      <td>{invoice.paymentStatus === 'P' ? "Pending" : invoice.paymentStatus === 'C' ? "Cleared" : ''}</td>
+                      <td>{invoice.paymentStatus === 'P' ? "Pending" : invoice.paymentStatus === 'Y' ? "Paid" : ''}</td>
 
                     </tr>
                   )}
@@ -2238,7 +2240,7 @@ function Payment_and_bill() {
                         <tr className="text-center">
                           <th rowSpan="2" style={{ width: '15%', background: '#BADDDA' }}>Sr No.</th>
                           <th rowSpan="2" style={{ width: '5%', background: '#BADDDA' }}>Party</th>
-                          <th rowSpan="2" style={{ width: '10%', background: '#BADDDA' }}>Type</th>
+                          <th rowSpan="2" style={{ width: '10%', background: '#BADDDA' }}>Packets</th>
                           <th rowSpan="2" style={{ width: '10%', background: '#BADDDA' }}>IR/ER No.</th>
                           <th rowSpan="2" style={{ width: '10%', background: '#BADDDA' }}>Mawb</th>
                           <th rowSpan="2" style={{ width: '10%', background: '#BADDDA' }}>Hawb</th>
@@ -2266,7 +2268,7 @@ function Payment_and_bill() {
                           <tr className="text-center dynamic-row-width">
                             <td>{((currentPage - 1) * itemsPerPage) + index + 1}</td>
                             <td>{import2.importerName}</td>
-                            <td>{import2.type}</td>
+                            <td>{import2.noPackates}</td>
                             <td>{import2.sirNo}</td>
                             <td>{import2.mawb}</td>
                             <td>{import2.hawb}</td>
@@ -2516,7 +2518,7 @@ function Payment_and_bill() {
 
 
                                 </td> */}
-                                <td>{invoice.paymentStatus === 'P' ? "Pending" : invoice.paymentStatus === 'C' ? "Cleared" : ''}</td>
+                                <td>{invoice.paymentStatus === 'P' ? "Pending" : invoice.paymentStatus === 'Y' ? "Paid" : ''}</td>
 
                               </tr>
                             )}
@@ -2535,12 +2537,8 @@ function Payment_and_bill() {
 
                 <Card>
                   <CardBody>
-
-
                     <Row>
-
                       <Col md={3}>
-
                         <FormGroup>
                           <Label className="forlabel" for="branchId">Receipt Id</Label>
                           <Input
@@ -3265,7 +3263,7 @@ function Payment_and_bill() {
                       <Button
                         variant="outline-success"
                         style={{ marginTop: '2vw' }}
-                        disabled={!selectedPartyPayment}
+                        disabled={!selectedPartyPayment || transId}
                         onClick={() => SearchPartyAmount(selectedPartyPayment ? selectedPartyPayment.value : '')}>
                         <FontAwesomeIcon icon={faSave} style={{ marginRight: '5px' }} />
                         SAVE
@@ -3274,10 +3272,19 @@ function Payment_and_bill() {
                       <Button
                         variant="outline-primary"
                         style={{ marginTop: '2vw', marginLeft: '10px' }}
-                        disabled={!selectedPartyPayment || !transId}
+                        disabled={!selectedPartyPayment || transId}
                         onClick={() => downLoadReceipt(selectedPartyPayment ? selectedPartyPayment.value : '', transId, 'PDF')}>
                         <FontAwesomeIcon icon={faSave} style={{ marginRight: '5px' }} />
                         Download
+                      </Button>
+
+
+                      <Button
+                        variant="outline-success"
+                        style={{ marginTop: '2vw', marginLeft: '1.5vw' }}
+                        onClick={clearReceipt}>
+                        <FontAwesomeIcon icon={faSave} style={{ marginRight: '5px' }} />
+                        Clear
                       </Button>
 
                     </div>
@@ -3350,7 +3357,7 @@ function Payment_and_bill() {
                 <Card>
                   <CardBody>
                     <Row>
-                      <Col md={3}>
+                      <Col md={5}>
                         <FormGroup>
                           <Label className="forlabel" for="branchId">Select Party</Label>
                           <Select
@@ -3380,30 +3387,6 @@ function Payment_and_bill() {
                           />
                         </FormGroup>
                       </Col>
-
-                      <Col md={3}>
-                        <FormGroup>
-                          <Label className="forlabel" for="branchId">Payment Type</Label>
-
-                          <select
-                            className={`form-select ${errors.paymentMode ? 'error-border' : ''}`}
-                            value={paymentMode}
-                            onChange={(e) => setPaymentMode(e.target.value)}
-                          >
-                            <option value="">Select Payment Type</option>
-                            <option value="CQ">CHEQUE</option>
-                            <option value="NF">NEFT</option>
-                            <option value="UP">UPI</option>
-                            <option value="CA">CASH</option>
-                          </select>
-
-                          {errors.paymentMode && (
-                            <div className="error-message">
-                              {errors.paymentMode}
-                            </div>
-                          )}
-                        </FormGroup>
-                      </Col>
                       <Col md={3}>
                         <FormGroup>
                           <Label className="forlabel" htmlFor="branchId">
@@ -3419,7 +3402,7 @@ function Payment_and_bill() {
                         </FormGroup>
                       </Col>
 
-                      <Col md={3}>
+                      <Col md={2}>
                         <FormGroup>
                           <Label className="forlabel" for="branchId">Advance Receipt Date</Label>
                           <div>
@@ -3440,289 +3423,491 @@ function Payment_and_bill() {
                           </div>
                         </FormGroup>
                       </Col>
+                      <Col md={2}>
+                        <FormGroup>
+                          <Label className="forlabel" for="branchId">Receipt Amount</Label>
+                          <Input
+                            type="number"
+                            name="receiptAmt"
+                            value={receiptAmt}
+                            readOnly
+                            id='service'
+                          />
+                        </FormGroup>
+                      </Col>
 
+                    </Row>
+
+                    <Row>
+                      <Col md={6}>
+                        <FormGroup>
+                          <Label className="forlabel" for="branchId">Select Payment Method</Label>
+                          <Row>
+                            <Col md={2}>
+                              <Input
+                                className="form-check-input radios"
+                                type="checkbox"
+                                style={{ width: '1.2vw', height: '1.2vw', marginRight: '5px' }}
+                                name="NEFT"
+                                checked={paymentMode.NEFT === 'NF'}
+                                onChange={handleCheckboxChange}
+                              />
+                              <label className="form-check-label ml-2" style={{ fontWeight: 'bold' }}>NEFT</label>
+                            </Col>
+                            <Col md={2}>
+                              <Input
+                                className="form-check-input radios"
+                                type="checkbox"
+                                style={{ width: '1.2vw', height: '1.2vw', marginRight: '5px' }}
+                                name="UPI"
+                                checked={paymentMode.UPI === 'UP'}
+                                onChange={handleCheckboxChange}
+                              />
+                              <label className="form-check-label ml-2" style={{ fontWeight: 'bold' }}>UPI</label>
+                            </Col>
+                            <Col md={2}>
+                              <Input
+                                className="form-check-input radios"
+                                type="checkbox"
+                                style={{ width: '1.2vw', height: '1.2vw', marginRight: '5px' }}
+                                name="Cheque"
+                                checked={paymentMode.Cheque === 'CQ'}
+                                onChange={handleCheckboxChange}
+                              />
+                              <label className="form-check-label ml-2" style={{ fontWeight: 'bold' }}>Cheque</label>
+                            </Col>
+                            <Col md={2}>
+                              <Input
+                                className="form-check-input radios"
+                                type="checkbox"
+                                style={{ width: '1.2vw', height: '1.2vw', marginRight: '5px' }}
+                                name="Cash"
+                                checked={paymentMode.Cash === 'CA'}
+                                onChange={handleCheckboxChange}
+                              />
+                              <label className="form-check-label ml-2" style={{ fontWeight: 'bold' }}>Cash</label>
+                            </Col>
+                          </Row>
+                        </FormGroup>
+                      </Col>
 
                     </Row>
 
 
 
 
-                    {paymentMode === 'CQ' ? (
-                      <Row>
-
-                        <Col md={3}>
-                          <FormGroup>
-                            <Label className="forlabel" htmlFor="branchId">
-                              Cheque Number
-                            </Label>
-                            <Input
-                              type="text"
-                              value={chequeNo}
-                              onChange={(e) => {
-                                const value = e.target.value;
-                                setChequeNo(value);
-                                const newErrors = value
-                                  ? { ...errors, chequeNo: undefined }
-                                  : { ...errors, chequeNo: 'chequeNo is required.' };
-                                setErrors(newErrors);
-                              }}
-                            />
-                            {errors.chequeNo && (
-                              <div className="error-message">
-                                {errors.chequeNo}
-                              </div>
-                            )}
-                          </FormGroup>
-                        </Col>
-                        <Col md={3}>
-                          <FormGroup>
-                            <Label className="forlabel" for="branchId">Cheque Date</Label>
-                            <div>
-                              <DatePicker
-                                selected={chequeDate}
-                                wrapperClassName="custom-react-datepicker-wrapper"
-                                onChange={(date) => {
-                                  const newErrors = { ...errors };
-                                  if (date) {
-                                    setChequeDate(date);
-                                    delete newErrors['chequeDate'];
-                                  } else {
-                                    newErrors['chequeDate'] = 'chequeDate is required.';
-                                  }
+                    {paymentMode.Cheque === 'CQ' ? (
+                      <>
+                        <h5 className="mt-3 mb-3">Enter Check Details Below</h5>
+                        <Row>
+                          <Col md={3}>
+                            <FormGroup>
+                              <Label className="forlabel" htmlFor="branchId">
+                                Cheque Number
+                              </Label>
+                              <Input
+                                type="text"
+                                value={chequeNo}
+                                maxLength={15}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  setChequeNo(value);
+                                  const newErrors = value
+                                    ? { ...errors, chequeNo: undefined }
+                                    : { ...errors, chequeNo: 'chequeNo is required.' };
                                   setErrors(newErrors);
                                 }}
-                                value={chequeDate}
-                                dateFormat="dd/MM/yyyy"
-                                className="form-control"
-                                customInput={<input style={{ width: '100%' }} />}
                               />
-                              {errors.chequeDate && (
+                              {errors.chequeNo && (
                                 <div className="error-message">
-                                  {errors.chequeDate}
+                                  {errors.chequeNo}
                                 </div>
                               )}
-                            </div>
-                          </FormGroup>
-                        </Col>
-                        <Col md={3}>
-                          <FormGroup>
-                            <Label className="forlabel" htmlFor="branchId">
-                              Bank Name
-                            </Label>
-                            <Input
-                              type="text"
-                              value={transbankName}
-                              onChange={(e) => {
-                                const value = e.target.value;
-                                setTransbankName(value);
-                                const newErrors = value
-                                  ? { ...errors, transbankName: undefined }
-                                  : { ...errors, transbankName: 'bankName is required.' };
-                                setErrors(newErrors);
-                              }}
-                            />
-                            {errors.transbankName && (
-                              <div className="error-message">
-                                {errors.transbankName}
+                            </FormGroup>
+                          </Col>
+                          <Col md={3}>
+                            <FormGroup>
+                              <Label className="forlabel" for="branchId">Cheque Date</Label>
+                              <div>
+                                <DatePicker
+                                  selected={chequeDate}
+                                  wrapperClassName="custom-react-datepicker-wrapper"
+                                  onChange={(date) => {
+                                    const newErrors = { ...errors };
+                                    if (date) {
+                                      setChequeDate(date);
+                                      delete newErrors['chequeDate'];
+                                    } else {
+                                      newErrors['chequeDate'] = 'chequeDate is required.';
+                                    }
+                                    setErrors(newErrors);
+                                  }}
+                                  value={chequeDate}
+                                  dateFormat="dd/MM/yyyy"
+                                  className="form-control"
+                                  customInput={<input style={{ width: '100%' }} />}
+                                />
+                                {errors.chequeDate && (
+                                  <div className="error-message">
+                                    {errors.chequeDate}
+                                  </div>
+                                )}
                               </div>
-                            )}
-
-                          </FormGroup>
-                        </Col>
-                        <Col md={3}>
-                          <FormGroup>
-                            <Label className="forlabel" htmlFor="branchId">
-                              Transaction Amount
-                            </Label>
-                            <Input
-                              type="number"
-                              value={transactionAmt}
-                              onChange={(e) => {
-                                const value = e.target.value;
-                                setTransactionAmt(value);
-                                const newErrors = value
-                                  ? { ...errors, transactionAmt: undefined }
-                                  : { ...errors, transactionAmt: 'transactionAmt is required.' };
-                                setErrors(newErrors);
-                              }}
-                              className={errors.transactionAmt ? 'error-border' : ''}
-                            />
-                            {errors.transactionAmt && (
-                              <div className="error-message">
-                                {errors.transactionAmt}
-                              </div>
-                            )}
-
-                          </FormGroup>
-                        </Col>
-
-                      </Row>
-
-                    ) : null}
-
-
-                    {paymentMode === 'NF' || paymentMode === 'UP' ? (
-                      <Row>
-
-                        <Col md={3}>
-                          <FormGroup>
-                            <Label className="forlabel" htmlFor="branchId">
-                              Transaction Number
-                            </Label>
-                            <Input
-                              type="text"
-                              value={transactionNo}
-                              onChange={(e) => {
-                                const value = e.target.value;
-                                setTransactionNo(value);
-                                const newErrors = value
-                                  ? { ...errors, transactionNo: undefined }
-                                  : { ...errors, transactionNo: 'transactionNo is required.' };
-                                setErrors(newErrors);
-                              }}
-                              className={errors.transactionNo ? 'error-border' : ''}
-                            />
-                            {errors.transactionNo && (
-                              <div className="error-message">
-                                {errors.transactionNo}
-                              </div>
-                            )}
-
-                          </FormGroup>
-                        </Col>
-
-                        <Col md={3}>
-                          <FormGroup>
-                            <Label className="forlabel" for="branchId">Transaction Date</Label>
-                            <div>
-                              <DatePicker
-                                selected={transactionDate}
-                                wrapperClassName="custom-react-datepicker-wrapper"
-                                onChange={(date) => {
-                                  const newErrors = { ...errors };
-                                  if (date) {
-                                    setTransactionDate(date);
-                                    delete newErrors['transactionDate'];
-                                  } else {
-                                    newErrors['transactionDate'] = 'transactionDate is required.';
-                                  }
+                            </FormGroup>
+                          </Col>
+                          <Col md={3}>
+                            <FormGroup>
+                              <Label className="forlabel" htmlFor="branchId">
+                                Bank Name
+                              </Label>
+                              <Input
+                                type="text"
+                                value={CheckbankName}
+                                onChange={(e) => { setcheckbankName(e.target.value); }}
+                                maxLength={40}
+                              />
+                            </FormGroup>
+                          </Col>
+                          <Col md={3}>
+                            <FormGroup>
+                              <Label className="forlabel" htmlFor="branchId">
+                                Check Amount
+                              </Label>
+                              <Input
+                                type="number"
+                                value={checkAmount}
+                                className={errors.checkAmount ? 'error-border' : ''}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  setCheckAmount(value);
+                                  const newErrors = value
+                                    ? { ...errors, checkAmount: undefined }
+                                    : { ...errors, checkAmount: 'checkAmount is required.' };
                                   setErrors(newErrors);
                                 }}
-                                value={transactionDate}
-                                dateFormat="dd/MM/yyyy"
-                                className={`form-control ${errors.paymentMode ? 'error-border' : ''}`}
-                                customInput={<input style={{ width: '100%' }} />}
+                                maxLength={40}
                               />
-                              {errors.transactionDate && (
+                              {errors.checkAmount && (
                                 <div className="error-message">
-                                  {errors.transactionDate}
+                                  {errors.checkAmount}
                                 </div>
                               )}
 
-                            </div>
-                          </FormGroup>
-                        </Col>
+                            </FormGroup>
+                          </Col>
 
-
-                        <Col md={3}>
-                          <FormGroup>
-                            <Label className="forlabel" htmlFor="branchId">
-                              Transaction Amount
-                            </Label>
-                            <Input
-                              type="number"
-                              value={transactionAmt}
-                              onChange={(e) => {
-                                const value = e.target.value;
-                                setTransactionAmt(value);
-                                const newErrors = value
-                                  ? { ...errors, transactionAmt: undefined }
-                                  : { ...errors, transactionAmt: 'transactionAmt is required.' };
-                                setErrors(newErrors);
-                              }}
-                              className={errors.transactionAmt ? 'error-border' : ''}
-                            />
-                            {errors.transactionAmt && (
-                              <div className="error-message">
-                                {errors.transactionAmt}
-                              </div>
-                            )}
-                          </FormGroup>
-                        </Col>
-                      </Row>
+                        </Row>
+                      </>
                     ) : null}
 
+                    {paymentMode.NEFT === 'NF' ? (
+                      <>
+                        <h5 className="mt-3 mb-3">Enter NEFT Details Below</h5>
 
-                    {paymentMode === 'CA' ? (
-                      <Row>
-
-                        <Col md={3}>
-                          <FormGroup>
-                            <Label className="forlabel" htmlFor="branchId">
-                              Amount
-                            </Label>
-                            <Input
-                              type="number"
-                              value={transactionAmt}
-                              onChange={(e) => {
-                                const value = e.target.value;
-                                setTransactionAmt(value);
-                                const newErrors = value
-                                  ? { ...errors, transactionAmt: undefined }
-                                  : { ...errors, transactionAmt: 'transactionAmt is required.' };
-                                setErrors(newErrors);
-                              }}
-                              className={errors.transactionAmt ? 'error-border' : ''}
-                            />
-
-                            {errors.transactionAmt && (
-                              <div className="error-message">
-                                {errors.transactionAmt}
-                              </div>
-                            )}
-                          </FormGroup>
-                        </Col>
-
-
-                        <Col md={3}>
-                          <FormGroup>
-                            <Label className="forlabel" for="branchId">Received Date</Label>
-                            <div>
-                              <DatePicker
-                                selected={transactionDate}
-                                wrapperClassName="custom-react-datepicker-wrapper"
-                                onChange={(date) => {
-                                  const newErrors = { ...errors };
-                                  if (date) {
-                                    setTransactionDate(date);
-                                    delete newErrors['transactionDate'];
-                                  } else {
-                                    newErrors['transactionDate'] = 'transactionDate is required.';
-                                  }
+                        <Row>
+                          <Col md={3}>
+                            <FormGroup>
+                              <Label className="forlabel" htmlFor="branchId">
+                                Transaction Number
+                              </Label>
+                              <Input
+                                type="text"
+                                value={neftTransactionNo}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  setNeftTransactionNo(value);
+                                  const newErrors = value
+                                    ? { ...errors, neftTransactionNo: undefined }
+                                    : { ...errors, neftTransactionNo: 'neftTransactionNo is required.' };
                                   setErrors(newErrors);
                                 }}
-                                value={transactionDate}
-                                dateFormat="dd/MM/yyyy"
-                                className={`form-control ${errors.transactionDate ? 'error-border' : ''}`}
-                                customInput={<input style={{ width: '100%' }} />}
+                                className={errors.neftTransactionNo ? 'error-border' : ''}
                               />
-                              {errors.transactionDate && (
+                              {errors.neftTransactionNo && (
                                 <div className="error-message">
-                                  {errors.transactionDate}
+                                  {errors.neftTransactionNo}
                                 </div>
                               )}
-                            </div>
-                          </FormGroup>
-                        </Col>
-                      </Row>
+
+                            </FormGroup>
+                          </Col>
+
+                          <Col md={3}>
+                            <FormGroup>
+                              <Label className="forlabel" for="branchId">Transaction Date</Label>
+                              <div>
+                                <DatePicker
+                                  selected={neftTransactionDate}
+                                  wrapperClassName="custom-react-datepicker-wrapper"
+                                  onChange={(date) => {
+                                    const newErrors = { ...errors };
+                                    if (date) {
+                                      setNeftTransactionDate(date);
+                                      delete newErrors['neftTransactionDate'];
+                                    } else {
+                                      newErrors['neftTransactionDate'] = 'neftTransactionDate is required.';
+                                    }
+                                    setErrors(newErrors);
+                                  }}
+                                  value={neftTransactionDate}
+                                  dateFormat="dd/MM/yyyy"
+                                  className={`form-control ${errors.neftTransactionDate ? 'error-border' : ''}`}
+                                  customInput={<input style={{ width: '100%' }} />}
+                                />
+                                {errors.neftTransactionDate && (
+                                  <div className="error-message">
+                                    {errors.neftTransactionDate}
+                                  </div>
+                                )}
+
+                              </div>
+                            </FormGroup>
+                          </Col>
+
+                          <Col md={3}>
+                            <FormGroup>
+                              <Label className="forlabel" htmlFor="branchId">
+                                Transaction Amount
+                              </Label>
+                              <Input
+                                type="number"
+                                value={neftTransactionAmt}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  setNeftTransactionAmt(value);
+                                  const newErrors = value
+                                    ? { ...errors, neftTransactionAmt: undefined }
+                                    : { ...errors, neftTransactionAmt: 'neftTransactionAmt is required.' };
+                                  setErrors(newErrors);
+                                }}
+                                className={errors.neftTransactionAmt ? 'error-border' : ''}
+                                maxLength={15}
+                              />
+                              {errors.neftTransactionAmt && (
+                                <div className="error-message">
+                                  {errors.neftTransactionAmt}
+                                </div>
+                              )}
+                            </FormGroup>
+                          </Col>
+                          <Col md={3}>
+                            <FormGroup>
+                              <Label className="forlabel" htmlFor="branchId">
+                                Bank Name
+                              </Label>
+                              <Input
+                                type="text"
+                                value={neftTransbankName}
+                                onChange={(e) => setNeftTransbankName(e.target.value)}
+                                className={errors.neftTransbankName ? 'error-border' : ''}
+                                maxLength={40}
+                              />
+                              {errors.neftTransbankName && (
+                                <div className="error-message">
+                                  {errors.neftTransbankName}
+                                </div>
+                              )}
+                            </FormGroup>
+                          </Col>
+                        </Row>
+                      </>
                     ) : null}
 
+                    {paymentMode.UPI === 'UP' ? (
+                      <>
+                        <h5 className="mt-3 mb-3">Enter UPI Details Below</h5>
+                        <Row>
+                          <Col md={3}>
+                            <FormGroup>
+                              <Label className="forlabel" htmlFor="branchId">
+                                Transaction Number
+                              </Label>
+                              <Input
+                                type="text"
+                                value={upiTransactionNo}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  setUpiTransactionNo(value);
+                                  const newErrors = value
+                                    ? { ...errors, upiTransactionNo: undefined }
+                                    : { ...errors, upiTransactionNo: 'upiTransactionNo is required.' };
+                                  setErrors(newErrors);
+                                }}
+                                className={errors.upiTransactionNo ? 'error-border' : ''}
+                              />
+                              {errors.upiTransactionNo && (
+                                <div className="error-message">
+                                  {errors.upiTransactionNo}
+                                </div>
+                              )}
+
+                            </FormGroup>
+                          </Col>
+
+                          <Col md={3}>
+                            <FormGroup>
+                              <Label className="forlabel" for="branchId">Transaction Date</Label>
+                              <div>
+                                <DatePicker
+                                  selected={upiTransactionDate}
+                                  wrapperClassName="custom-react-datepicker-wrapper"
+                                  onChange={(date) => {
+                                    const newErrors = { ...errors };
+                                    if (date) {
+                                      setUpiTransactionDate(date);
+                                      delete newErrors['upiTransactionDate'];
+                                    } else {
+                                      newErrors['upiTransactionDate'] = 'upiTransactionDate is required.';
+                                    }
+                                    setErrors(newErrors);
+                                  }}
+                                  value={upiTransactionDate}
+                                  dateFormat="dd/MM/yyyy"
+                                  className={`form-control ${errors.upiTransactionDate ? 'error-border' : ''}`}
+                                  customInput={<input style={{ width: '100%' }} />}
+                                />
+                                {errors.upiTransactionDate && (
+                                  <div className="error-message">
+                                    {errors.upiTransactionDate}
+                                  </div>
+                                )}
+
+                              </div>
+                            </FormGroup>
+                          </Col>
+
+                          <Col md={3}>
+                            <FormGroup>
+                              <Label className="forlabel" htmlFor="branchId">
+                                Transaction Amount
+                              </Label>
+                              <Input
+                                type="number"
+                                value={upiTransactionAmt}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  setUpiTransactionAmt(value);
+                                  const newErrors = value
+                                    ? { ...errors, upiTransactionAmt: undefined }
+                                    : { ...errors, upiTransactionAmt: 'upiTransactionAmt is required.' };
+                                  setErrors(newErrors);
+                                }}
+                                className={errors.upiTransactionAmt ? 'error-border' : ''}
+                                maxLength={15}
+                              />
+                              {errors.upiTransactionAmt && (
+                                <div className="error-message">
+                                  {errors.upiTransactionAmt}
+                                </div>
+                              )}
+
+                            </FormGroup>
+                          </Col>
+                          <Col md={3}>
+                            <FormGroup>
+                              <Label className="forlabel" htmlFor="branchId">
+                                Bank Name
+                              </Label>
+                              <Input
+                                type="text"
+                                value={upiTransbankName}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  setUpiTransbankName(value);
+                                  const newErrors = value
+                                    ? { ...errors, upiTransbankName: undefined }
+                                    : { ...errors, upiTransbankName: 'upiTransbankName is required.' };
+                                  setErrors(newErrors);
+                                }}
+                                className={errors.upiTransbankName ? 'error-border' : ''}
+                                maxLength={40}
+                              />
+                              {errors.upiTransbankName && (
+                                <div className="error-message">
+                                  {errors.upiTransbankName}
+                                </div>
+                              )}
+                            </FormGroup>
+                          </Col>
+                        </Row>
+                      </>
+                    ) : null}
+
+                    {paymentMode.Cash === 'CA' ? (
+                      <>
+                        <h5 className="mt-3 mb-3">Enter CASH Details Below</h5>
+                        <Row>
+                          <Col md={3}>
+                            <FormGroup>
+                              <Label className="forlabel" htmlFor="branchId">
+                                Amount
+                              </Label>
+                              <Input
+                                type="number"
+                                value={transactionAmt}
+                                // onChange={(e) => setTransactionAmt(e.target.value)}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  setTransactionAmt(value);
+                                  const newErrors = value
+                                    ? { ...errors, transactionAmt: undefined }
+                                    : { ...errors, transactionAmt: 'transactionAmt is required.' };
+                                  setErrors(newErrors);
+                                }}
+                                className={errors.transactionAmt ? 'error-border' : ''}
+                                maxLength={15}
+                              />
+                              {errors.transactionAmt && (
+                                <div className="error-message">
+                                  {errors.transactionAmt}
+                                </div>
+                              )}
+                            </FormGroup>
+                          </Col>
+
+
+                          <Col md={3}>
+                            <FormGroup>
+                              <Label className="forlabel" for="branchId">Received Date</Label>
+                              <div>
+                                <DatePicker
+                                  selected={transactionDate}
+                                  wrapperClassName="custom-react-datepicker-wrapper"
+                                  onChange={(date) => {
+                                    const newErrors = { ...errors };
+                                    if (date) {
+                                      setTransactionDate(date);
+                                      delete newErrors['transactionDate'];
+                                    } else {
+                                      newErrors['transactionDate'] = 'transactionDate is required.';
+                                    }
+                                    setErrors(newErrors);
+                                  }}
+                                  value={transactionDate}
+                                  dateFormat="dd/MM/yyyy"
+                                  className={`form-control ${errors.transactionDate ? 'error-border' : ''}`}
+                                  customInput={<input style={{ width: '100%' }} />}
+                                />
+
+
+
+                                {errors.transactionDate && (
+                                  <div className="error-message">
+                                    {errors.transactionDate}
+                                  </div>
+                                )}
+                              </div>
+                            </FormGroup>
+                          </Col>
+                        </Row>
+                      </>
+                    ) : null}
 
                     <div className="text-center">
                       <Button
                         variant="outline-success"
                         style={{ marginTop: '1.5vw' }}
-                        disabled={!selectedPartyAdvance || !paymentMode}
+                        disabled={!selectedPartyAdvance || transId}
                         onClick={() => addAdvance(selectedPartyAdvance ? selectedPartyAdvance.value : '')}>
                         <FontAwesomeIcon icon={faSave} style={{ marginRight: '5px' }} />
                         Add Advance
@@ -3799,16 +3984,17 @@ function Payment_and_bill() {
                 <Card>
                   <CardBody>
                     <Row>
-                      <Col md={4}>
+                      <Col md={3}>
                         <FormGroup>
                           <Label className="forlabel" for="branchId">Select Party</Label>
                           <Select
-                            options={parties}
-                            value={{ value: partyName, label: partyName }}
-                            onChange={handlePartyChange}
-                            className={`${errors.partyname ? 'error-border' : ''
-                              } responsive-select`}
+                            options={partiesAll}
+                            value={selectedPartyTransaction}
+                            onChange={handlePartyTransaction}
+                            className={errors.selectedPartyAdvance ? 'error-border' : ''}
                             isClearable
+                            filterOption={customFilterOption}
+                            placeholder="Select a Party"
                             styles={{
                               control: (provided, state) => ({
                                 ...provided,
@@ -3876,8 +4062,7 @@ function Payment_and_bill() {
                         <Button
                           variant="outline-primary"
                           style={{ marginTop: '2vw' }}
-                          onClick={findBillingTransaction2222}
-
+                          onClick={BillingTransaction}
                         >
                           <FontAwesomeIcon icon={faSearch} style={{ marginRight: '5px' }} />
                           Search
@@ -3894,53 +4079,49 @@ function Payment_and_bill() {
 
                     <Table striped responsive bordered>
                       <thead>
-                        <tr className='text-center'>
-                          <th rowSpan="2" style={{ width: '3%', background: '#BADDDA' }}>Party/Unit</th>
-                          <th rowSpan="2" style={{ width: '8%', background: '#BADDDA' }}>Date</th>
-                          <th colSpan="2" style={{ width: '5%', background: '#BADDDA' }}>IMP PCKGS</th>
-                          <th colSpan="2" style={{ width: '5%', background: '#BADDDA' }}>EXP PKGS</th>
-                          <th rowSpan="2" style={{ width: '5%', background: '#BADDDA' }}>Total PKGS</th>
-                          <th rowSpan="2" style={{ width: '5%', background: '#BADDDA' }}>IIND SAT</th>
-                          <th rowSpan="2" style={{ width: '3%', background: '#BADDDA' }}>DEMURAGES</th>
-                          <th colSpan="4" style={{ width: '30%', background: '#BADDDA' }}>EXPORT</th>
-                          <th colSpan="4" style={{ width: '30%', background: '#BADDDA' }}>IMPORT</th>
+                        <tr className="text-center">
+                          <th rowSpan="2" style={{ width: '15%', background: '#BADDDA' }}>Party</th>
+                          <th rowSpan="2" style={{ width: '5%', background: '#BADDDA' }}>Packets</th>
+                          <th rowSpan="2" style={{ width: '10%', background: '#BADDDA' }}>IR/ER No.</th>
+                          <th rowSpan="2" style={{ width: '10%', background: '#BADDDA' }}>Mawb</th>
+                          <th rowSpan="2" style={{ width: '10%', background: '#BADDDA' }}>Hawb</th>
+                          <th rowSpan="2" style={{ width: '3%', background: '#BADDDA' }}>In Date</th>
+                          <th rowSpan="2" style={{ width: '3%', background: '#BADDDA' }}>Out Date</th>
+                          <th rowSpan="2" style={{ width: '3%', background: '#BADDDA' }}>CHA</th>
+                          <th rowSpan="2" style={{ width: '25%', background: '#BADDDA' }}>Doc Charges</th>
+                          <th colSpan="2" style={{ width: '25%', background: '#BADDDA' }}>AS Per Value</th>
+                          <th colSpan="2" style={{ width: '25%', background: '#BADDDA' }}>AS Per Weight</th>
+                          <th colSpan="2" style={{ width: '25%', background: '#BADDDA' }}>Demurages Charges</th>
+                          <th rowSpan="2" style={{ width: '25%', background: '#BADDDA' }}>Total Amount</th>
                         </tr>
-                        <tr className='text-center'>
-                          <th style={{ width: '6%', background: '#BADDDA' }}>IMP</th>
-                          <th style={{ width: '6%', background: '#BADDDA' }}>SUB</th>
-                          <th style={{ width: '6%', background: '#BADDDA' }}>EXP</th>
-                          <th style={{ width: '6%', background: '#BADDDA' }}>SUB</th>
-                          <th style={{ width: '8%', background: '#BADDDA' }}>SC</th>
-                          <th style={{ width: '8%', background: '#BADDDA' }}>HW Wt</th>
-                          <th style={{ width: '8%', background: '#BADDDA' }}>PC</th>
-                          <th style={{ width: '8%', background: '#BADDDA' }}>OC</th>
-                          <th style={{ width: '8%', background: '#BADDDA' }}>SC</th>
-                          <th style={{ width: '8%', background: '#BADDDA' }}>HW Wt</th>
-                          <th style={{ width: '8%', background: '#BADDDA' }}>PC</th>
-                          <th style={{ width: '8%', background: '#BADDDA' }}>OC</th>
+                        <tr>
+                          <th style={{ width: '6%', background: '#BADDDA' }}>Value(INR)</th>
+                          <th style={{ width: '6%', background: '#BADDDA' }}>Charges(INR)</th>
+                          <th style={{ width: '6%', background: '#BADDDA' }}>Weight(CTS)</th>
+                          <th style={{ width: '6%', background: '#BADDDA' }}>Charges(INR)</th>
+                          <th style={{ width: '6%', background: '#BADDDA' }}>Days</th>
+                          <th style={{ width: '6%', background: '#BADDDA' }}>charges(INR)</th>
                         </tr>
                       </thead>
                       <tbody>
                         {currentItems5.map((import2, index) =>
                           <tr className="text-center dynamic-row-width">
-                            <td>{partyNames[import2.partyId]}</td>
-                            <td>{formatDateTime(import2.invoiceDate)}</td>
-                            <td>{import2.importNoOfPackages}</td>
-                            <td>{import2.importSubNop}</td>
-                            <td>{import2.exportNoOfPackages}</td>
-                            <td>{import2.exportSubNop}</td>
-                            <td>{import2.totalPackages}</td>
-                            <td onClick={() => openHeavModal(import2, 'holiday')}>{import2.holidayRate}</td>
-                            <td onClick={() => openHeavModal(import2, 'demurage')}>{import2.demuragesRate}</td>
-                            <td onClick={() => openHeavModal(import2, 'exportsc')}>{import2.exportScRate}</td>
-                            <td onClick={() => openHeavModal(import2, 'export')}>{import2.exportHpRate}</td>
-                            <td onClick={() => openHeavModal(import2, 'exportpc')}>{import2.exportPcRate}</td>
-                            <td onClick={() => openHeavModal(import2, 'exportoc')}>{import2.exportPenalty}</td>
-                            <td onClick={() => openHeavModal(import2, 'importsc')}>{import2.importScRate}</td>
-                            <td onClick={() => openHeavModal(import2, 'import')}>{import2.importHpRate}</td>
-                            <td onClick={() => openHeavModal(import2, 'importpc')}>{import2.importPcRate}</td>
-                            {/* <td className="table-column">{import2.importHpStatus}</td> */}
-                            <td onClick={() => openHeavModal(import2, 'importoc')}>{import2.importPenalty}</td>
+                            <td>{import2.partyId}</td>
+                            <td>{import2.noPackates}</td>
+                            <td>{import2.sirNo}</td>
+                            <td>{import2.mawb}</td>
+                            <td>{import2.hawb}</td>
+                            <td>{formatDateTimeNEW(import2.inDate)}</td>
+                            <td>{formatDateTimeNEW(import2.outDate)}</td>
+                            <td>{import2.chaName}</td>
+                            <td>{import2.documentCharges}</td>
+                            <td>{import2.price}</td>
+                            <td>{import2.rateByPrice}</td>
+                            <td>{import2.weight}</td>
+                            <td>{import2.rateByWeight}</td>
+                            <td>{import2.stockDays}</td>
+                            <td>{import2.demurageCharges}</td>
+                            <td>{import2.totalInvoiceAmount}</td>
                           </tr>
                         )}
                       </tbody>
@@ -3949,34 +4130,6 @@ function Payment_and_bill() {
                       <Row>
                         <Col md={8}></Col>
                         {/* <Col md={3}></Col> */}
-                        <Col md={2}>
-
-                          <FormGroup>
-                            <Label className="forlabel" for="branchId">NIPT Packages</Label>
-                            <Input type="text" name="passengerName"
-                              className="form-control"
-                              value={niptPackages2}
-                              readOnly
-                              id='service'
-                            />
-                          </FormGroup>
-                        </Col>
-                        <Col md={2}>
-
-                          <FormGroup>
-                            <Label className="forlabel" for="branchId">Bill</Label>
-                            <Input type="text" name="passengerName"
-                              className="form-control"
-                              value={totalRate2}
-                              readOnly
-                              id='service'
-                            />
-                          </FormGroup>
-                        </Col>
-                      </Row>
-
-
-                      <Row>
                         <Col md={2}>
                           <FormGroup>
                             <Label className="forlabel" for="branchId">Total Bill</Label>
@@ -3988,6 +4141,23 @@ function Payment_and_bill() {
                             />
                           </FormGroup>
                         </Col>
+                        <Col md={2}>
+
+                          <FormGroup>
+                            <Label className="forlabel" for="branchId">Page Bill</Label>
+                            <Input type="text" name="passengerName"
+                              className="form-control"
+                              value={(totalRate2)}
+                              readOnly
+                              id='service'
+                            />
+                          </FormGroup>
+                        </Col>
+                      </Row>
+
+
+                      <Row>
+
 
 
                       </Row>
@@ -4088,7 +4258,7 @@ function Payment_and_bill() {
                               <th rowSpan="2" style={{ background: '#BADDDA' }}>Date & Time</th>
                               <th rowSpan="2" style={{ background: '#BADDDA' }}>Invoice Amount</th>
                               <th rowSpan="2" style={{ background: '#BADDDA' }}>Tds Amount</th>
-                              <th rowSpan="2" style={{ background: '#BADDDA' }}>Receipt Amount</th>                            
+                              <th rowSpan="2" style={{ background: '#BADDDA' }}>Receipt Amount</th>
                               <th colSpan="2" style={{ background: '#BADDDA' }}>Download</th>
                             </tr>
                             <tr className='text-center'>
@@ -4104,7 +4274,7 @@ function Payment_and_bill() {
                                 <td>{formatDateTimeMonth(invoice.transDate)}</td>
                                 <td>{invoice.invoiceAmt}</td>
                                 <td>{invoice.tdsAmt}</td>
-                                <td>{invoice.receiptAmt}</td>                               
+                                <td>{invoice.receiptAmt}</td>
                                 <td>
                                   <Button
                                     variant="outline-primary"

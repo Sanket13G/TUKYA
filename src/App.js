@@ -93,6 +93,9 @@ import ExportSHB from "./Parent_Pages/ExportSHB";
 import AddExportSHB from "./Parent_Pages/AddExportSHB";
 import PacketReceivedSummary from "./Child_Pages/PacketReceivedSummary";
 import SummaryReport from "./Child_Pages/SummaryReport";
+import PreImport from "./Parent_Pages/PreImport";
+import PreImportModel from "./Parent_Pages/PreImportModel";
+
 
 function App() {
 
@@ -218,6 +221,7 @@ function App() {
                               <Route path="/parent/dashboard" element={<Dashboard />} />
                               <Route path="/parent/changepassword" element={<ChangePassword />} />
 
+                              <Route path="/parent/pre-import" element={<PreImport />} />
                               <Route path="/child/monthly-report" element={<Monthly_Report />} />
                               <Route path="/parent/party-form" element={<PartyForm />} />
                               <Route path="/parent/update-party" element={<UpdatePartyForm />} />
@@ -232,6 +236,12 @@ function App() {
                               <Route path="/parent/import/add-new/:transId2/:mawb2/:hawb2/:sir2/modify" element={<Import_Model />} />
                               <Route path="/parent/subcontract-lgdimport" element={<Subcontract_LGD_Import />} />
 
+
+
+
+                              <Route path="/parent/pre-import/add-new" element={<PreImportModel />} /> 
+                              <Route path="/parent/pre-import/add-new/:transId3/:mawb3/:hawb3/:sir3/view" element={<PreImportModel />} /> 
+                              <Route path="/parent/pre-import/add-new/:transId2/:mawb2/:hawb2/:sir2/modify" element={<PreImportModel />} />
                               <Route path="/parent/rate-chart" element={<Rate_chart />} />
                               <Route path="/parent/rate-chart/:trfno" element={<Rate_chart />} />
                               <Route path="/parent/rate-chart-services/:SinglecfsTarrifNo" element={<Rate_CFS_Service />} />

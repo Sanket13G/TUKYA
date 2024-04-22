@@ -14,6 +14,120 @@ const import_url2 = `http://${ipaddress}import/`;
 
 class InviceService {
 
+
+// *********************Party TDS Report **********************************
+
+// Advance Tab 
+
+addAdvamce(compId, branchId, partyId, user, dtl, trans) {
+    const requestData = {
+        finTransDtl: dtl,
+        finTrans: trans
+    };
+    return axios.post(`${payment_url}addvance`, requestData,
+        {
+            params:
+            {
+                companyId: compId,
+                branchId: branchId,
+                PartyId: partyId,
+                userId: user
+            }
+        });
+};
+
+
+
+// addAdvamce(compId, branchId, partyId, advance) {
+//     return axios.post(`${payment_url}addvance`, advance,
+//         {
+//             params:
+//             {
+//                 companyId: compId,
+//                 branchId: branchId,
+//                 PartyId: partyId  // Use 'PartyId' instead of 'partyId'
+//             }
+//         });
+// };
+
+
+
+
+
+
+// 
+downLoadTDSXLS(data) {
+    return axios.get(`${invoice_url}downLoadTdsXLS`,
+        {
+            params:  data ,
+            responseType: 'arraybuffer'
+        });
+};
+
+
+generatePartyTDSPrint(data) {
+    return axios.get(`${invoice_url}downLoadTdsPrint`,
+        {
+            params:  data ,
+            responseType: 'arraybuffer'
+        });
+};
+
+// Party Summary Report
+getPartyTDSData(data) {
+    return axios.get(`${invoice_url}getPartyTdsReport`, {
+        params: data, // Pass the URL as a parameter
+    });
+};
+
+
+
+// *********************Party Bill Summary Report **********************************
+    downLoadSummaryXLS(data) {
+        return axios.get(`${invoice_url}downLoadSummaryXLS`,
+            {
+                params:  data ,
+                responseType: 'arraybuffer'
+            });
+    };
+
+
+    generatePartyBillSummary(data) {
+        return axios.get(`${invoice_url}downLoadSummaryPrint`,
+            {
+                params:  data ,
+                responseType: 'arraybuffer'
+            });
+    };
+
+    // Party Summary Report
+    getPartySummaryReport(data) {
+        return axios.get(`${invoice_url}getPartySummaryReport`, {
+            params: data, // Pass the URL as a parameter
+        });
+    };
+
+    // Billing Transaction
+    getBillingTransactionAfter(data) {
+        return axios.get(`${invoice_url}searchBillinTransactionAfter`, {
+            params: data, // Pass the URL as a parameter
+        });
+
+    };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     // PAYMENT TAB URL'S
 
     getReceiptDataOfParty(compId, branchId, partyId, invoiceNo) {
