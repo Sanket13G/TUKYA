@@ -170,8 +170,8 @@ export default function ExportSHB() {
 
   const search = (searchFilters1) => {
     setloading(true);
-    const start = convertToFormattedDate(searchFilters1.startDate) + " 00:00:00";
-    const end = convertToFormattedDate(searchFilters1.endDate) + " 23:59:59";
+    const start = convertToFormattedDate(searchFilters1.startDate);
+    const end = convertToFormattedDate(searchFilters1.endDate);
     axios
       .get(`http://${ipaddress}exportshb/search?searchValue=${searchFilters1.serNo}&companyid=${companyid}&branchId=${branchId}&holdStatus=${searchFilters1.hold}&snzStatus=${searchFilters1.snzParcel}&hpStatus=${searchFilters1.heavy}&dgdcStatus=${searchFilters1.dgdcStatus}&startDate=${start}&endDate=${end}&logintype=${logintype}&loginid=${logintypeid}`)
       .then((response) => {
