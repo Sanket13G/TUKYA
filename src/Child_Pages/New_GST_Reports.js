@@ -284,29 +284,41 @@ export default function New_GST_Reports() {
   };
 
   const fetchInvoiceDataOfParty = () => {
+    if(!startDate){
+      toast.error("Start date is required",{
+        autoClose:800
+      })
+      return;
+    }
+
+    if(!endDate){
+      toast.error("End date is required",{
+        autoClose:800
+      })
+      return;
+    }
     if (selectedParty) {
       // Make an API request here to fetch the list of airline names based on the provided criteria
-      fetch(
-        `http://${ipaddress}Invoice/invoiceDataOfParty?companyId=${companyid}&branchId=${branchId}&startDate=${formattedStartDate}&endDate=${formattedEndDate}&partyId=${selectedParty}`
+      axios.get(
+        `http://${ipaddress}Invoice/SHBNewGstInvoiceAllDataOfParty?companyId=${companyid}&branchId=${branchId}&startDate=${formatDateNew(startDate)}&endDate=${formatDateNew(endDate)}&partyId=${selectedParty}`
       )
-        .then((response) => response.json())
-        .then((data) => {
+       
+        .then((response) => {
+          const data = response.data;
           if (Array.isArray(data) && data.length > 0) {
-            // Update the 'airlines' state with the fetched data
-            setInvoiceDataParty(data);
-            console.log("Invoice Data Of Particular Party", data);
-            setInvoicePartyDataTable(true);
-            setInvoiceAllDataTable(false);
-            setInvoiceAllData([]);
-            setInvoicePartyTypeDataTable(false);
-            setInvoiceDataPartyType([]);
-            toast.success("Invoice Data Found", {
+           
+            setInvoiceAllDataTable(true);
+         
+            setInvoiceAllData(data);
+         
+         
+            toast.success("Data Found Successfully", {
               autoClose: 900,
               position: "top-center",
             });
           } else {
-            console.error("API response is not an array:", data);
-            toast.error("Invoice Data Not Found", {
+
+            toast.error("Data Not Found", {
               autoClose: 900,
               position: "top-center",
             });
@@ -321,39 +333,58 @@ export default function New_GST_Reports() {
     }
   };
 
+  const formatDateNew = (inputDate) => {
+    const date = new Date(inputDate);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
   const fetchAllInvoiceData = () => {
-    fetch(
-      `http://${ipaddress}Invoice/invoiceAllDataOfParty?companyId=${companyid}&branchId=${branchId}&startDate=${formattedStartDate}&endDate=${formattedEndDate}`
-    )
-      .then((response) => response.json())
-      .then((data) => {
-        if (Array.isArray(data) && data.length > 0) {
-          // Update the 'airlines' state with the fetched data
-          setInvoiceAllData(data);
-          console.log("Invoice Data Of Particular Party", data);
-          setInvoiceAllDataTable(true);
-          setInvoicePartyDataTable(false);
-          setInvoiceDataParty([]);
-          setInvoicePartyTypeDataTable(false);
-          setInvoiceDataPartyType([]);
-          toast.success("Invoice Data Found", {
-            autoClose: 900,
-            position: "top-center",
-          });
-        } else {
-          console.error("API response is not an array:", data);
-          toast.error("Invoice Data Not Found", {
-            autoClose: 900,
-            position: "top-center",
-          });
-          setInvoiceAllDataTable(false);
-          setInvoicePartyDataTable(false);
-          setInvoiceDataParty([]);
-          setInvoicePartyTypeDataTable(false);
-          setInvoiceDataPartyType([]);
-        }
+    if(!startDate){
+      toast.error("Start date is required",{
+        autoClose:800
       })
-      .catch((error) => { });
+      return;
+    }
+
+    if(!endDate){
+      toast.error("End date is required",{
+        autoClose:800
+      })
+      return;
+    }
+    axios.get(
+      `http://${ipaddress}Invoice/SHBNewGstInvoiceAllDataOfParty?companyId=${companyid}&branchId=${branchId}&startDate=${formatDateNew(startDate)}&endDate=${formatDateNew(endDate)}`
+    )
+    .then((response) => {
+      const data = response.data;
+      if (Array.isArray(data) && data.length > 0) {
+       
+        setInvoiceAllDataTable(true);
+     
+        setInvoiceAllData(data);
+     
+     
+        toast.success("Data Found Successfully", {
+          autoClose: 900,
+          position: "top-center",
+        });
+      } else {
+
+        toast.error("Data Not Found", {
+          autoClose: 900,
+          position: "top-center",
+        });
+        setInvoicePartyDataTable(false);
+        setInvoiceAllData([]);
+        setInvoiceAllDataTable(false);
+        setInvoicePartyTypeDataTable(false);
+        setInvoiceDataPartyType([]);
+      }
+    })
+    .catch((error) => { });
   };
   const fetchInvoiceDataOfPartyType = () => {
     // if (selectedPartyType) {
@@ -401,67 +432,36 @@ export default function New_GST_Reports() {
   // }, [selectedPartyType]);
 
   const handleShow = () => {
-    console.log('selectedPartyType ', selectedPartyType, " ", selectedParty);
-    if (startDate && endDate && !selectedParty && !selectedPartyType) {
+   
+    if (startDate && endDate && !selectedParty) {
       fetchAllInvoiceData();
-    } else if (startDate && endDate && selectedParty && !selectedPartyType) {
+    } else if (startDate && endDate && selectedParty) {
       fetchInvoiceDataOfParty();
-    } else if (startDate && endDate && selectedPartyType && !selectedParty) {
-      fetchInvoiceDataOfPartyType();
     }
   };
 
 
-  const [displayedPartyNames, setDisplayedPartyNames] = useState({});
-  const togglePartyNameDisplay = (partyId) => {
-    setDisplayedPartyNames((prevState) => {
-      return { ...prevState, [partyId]: !prevState[partyId] };
-    });
-  };
+ 
 
   const totalAllInvoiceAmount = invoiceAllData.reduce(
-    (total, item) => total + item.totalInvoiceAmount,
+    (total, item) => total + item[4],
     0
   );
   const totalAllTaxAmount = invoiceAllData.reduce(
-    (total, item) => total + item.taxAmount,
+    (total, item) => total + item[6],
     0
   );
   const totalAllTaxableAmount = invoiceAllData.reduce(
-    (total, item) => total + item.billAmount,
+    (total, item) => total + item[7],
     0
   );
 
-  const totalInvoiceAmountOfParty = invoiceDataParty.reduce(
-    (total, item) => total + item.totalInvoiceAmount,
-    0
-  );
-  const totalTaxAmountOfParty = invoiceDataParty.reduce(
-    (total, item) => total + item.taxAmount,
-    0
-  );
-  const totalTaxableAmountOfParty = invoiceDataParty.reduce(
-    (total, item) => total + item.billAmount,
-    0
-  );
-
-  const totalInvoiceAmountOfPartyType = invoiceDataPartyType.reduce(
-    (total, item) => total + item.totalInvoiceAmount,
-    0
-  );
-  const totalTaxAmountOfPartyType = invoiceDataPartyType.reduce(
-    (total, item) => total + item.taxAmount,
-    0
-  );
-  const totalTaxableAmountOfPartyType = invoiceDataPartyType.reduce(
-    (total, item) => total + item.billAmount,
-    0
-  );
+ 
 
   const handlePdf = async () => {
     try {
       const response = await axios.post(
-        `http://${ipaddress}Invoice/invoicPrintOfNewGstParty?companyId=${companyid}&branchId=${branchId}&startDate=${formattedStartDate}&endDate=${formattedEndDate}&partyId=${selectedParty}`
+        `http://${ipaddress}Invoice/newGstPrint?companyId=${companyid}&branchId=${branchId}&startDate=${formatDateNew(startDate)}&endDate=${formatDateNew(endDate)}&partyId=${selectedParty}`
       );
       // toast.success("GST Summary PDF Created Successfully ", { position: "top-center" ,autoClose: 900});
 
@@ -504,7 +504,7 @@ export default function New_GST_Reports() {
   const handlePrint = async () => {
     try {
       const response = await axios.post(
-        `http://${ipaddress}Invoice/invoicPrintOfNewGstParty?companyId=${companyid}&branchId=${branchId}&startDate=${formattedStartDate}&endDate=${formattedEndDate}&partyId=${selectedParty}`
+        `http://${ipaddress}Invoice/newGstPrint?companyId=${companyid}&branchId=${branchId}&startDate=${formatDateNew(startDate)}&endDate=${formatDateNew(endDate)}&partyId=${selectedParty}`
       );
       if (response.status === 200) {
         const base64PDF = response.data;
@@ -748,27 +748,39 @@ export default function New_GST_Reports() {
   //     });
   // };
 
-  const getExcel = (data) => {
-    const filename = `New_GST_Report.xlsx`;
-    axios.post(`http://${ipaddress}Invoice/gstReport`,data, { responseType: 'blob' })
-      .then(async (response) => {
-        const blob = new Blob([response.data], { type: response.headers['content-type'] });
+  const getExcel = async() => {
   
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-  
+
+      try {
+
+        const filename = `New_GST_Report.xlsx`;
+    
+        const headers = {
+          headers: {
+            Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          },
+          responseType: 'blob',
+        };
+    
+        const response = await axios.post(`http://${ipaddress}Invoice/SHBGstReport?companyId=${companyid}&branchId=${branchId}&startDate=${formatDateNew(startDate)}&endDate=${formatDateNew(endDate)}&partyId=${selectedParty}`, null, headers);
+    
+        const url = window.URL.createObjectURL(new Blob([response.data], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        }));
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute("download", filename);
+        document.body.appendChild(link);
+        link.click();
+        // Clean up
+        link.parentNode.removeChild(link);
         window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-      })
-      .catch((error) => {
+      } catch (error) {
+        console.error("Error downloading XLSX: ", error);
         toast.error("Something went wrong", {
-          autoClose: 700
+          autoClose: 700,
         });
-      });
+      }
   };
   
   
@@ -854,7 +866,7 @@ export default function New_GST_Reports() {
                 </select>
               </FormGroup>
             </Col>
-            <Col md={3}>
+            {/* <Col md={3}>
               <FormGroup>
                 <label htmlFor="company" className="inputhead">
                   Select Party Type
@@ -874,7 +886,7 @@ export default function New_GST_Reports() {
                   ))}
                 </select>
               </FormGroup>
-            </Col>
+            </Col> */}
           </Row>
           <Row>
             <Col md={4}>
@@ -910,7 +922,7 @@ export default function New_GST_Reports() {
           </Row>
         </CardBody>
       </Card>
-      {invoicePartyDataTable ? (
+      {invoiceAllDataTable ? (
         <Card style={{ marginTop: 30 }}>
           <CardBody>
             <div>
@@ -948,116 +960,7 @@ export default function New_GST_Reports() {
                     className=""
                     variant="outline-success"
                     
-                    onClick={()=>getExcel(invoiceDataParty)}
-                  >
-                    <FontAwesomeIcon
-                      icon={faFileExcel}
-                      style={{ marginRight: "5px" }}
-                    />
-                    XLS
-                  </Button>
-                </Col>
-              </Row>
-            </div>
-            <div className="table-responsive">
-              <Table
-                style={{ marginTop: 9 }}
-                className="table table-striped table-hover"
-              >
-                <thead>
-                  <tr>
-                    <th style={{ background: "#BADDDA", textAlign: 'center' }}>Sr. No</th>
-                    <th style={{ background: "#BADDDA", textAlign: 'center' }}>Party Name</th>
-                    <th style={{ background: "#BADDDA", textAlign: 'center' }}>GSTIN Of Party</th>
-                    <th style={{ background: "#BADDDA", textAlign: 'center' }}>Invoice No</th>
-                    <th style={{ background: "#BADDDA", textAlign: 'center' }}>Invoice Date</th>
-                    <th style={{ background: "#BADDDA", textAlign: 'center' }}>
-                      Total Invoice Value
-                    </th>
-                    <th style={{ background: "#BADDDA", textAlign: 'center' }}>GST Rate</th>
-                    <th style={{ background: "#BADDDA", textAlign: 'center' }}>GST Amount </th>
-                    <th style={{ background: "#BADDDA", textAlign: 'center' }}>Taxable Value</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {invoiceDataParty.map((item, index) => (
-                    <tr key={index}>
-                      <td style={{ textAlign: 'center' }}>{index + 1}</td>
-                      <td style={{ fontWeight: "bold", textAlign: 'center' }}>
-                        {getpartyId[selectedParty]}
-                      </td>
-                      <td style={{ textAlign: 'center' }}> {selectedPartyGstNo}</td>
-                      <td style={{ textAlign: 'center' }}>{item.invoiceNO}</td>
-                      <td>{formatedDate(item.invoiceDate)}</td>
-                      <td style={{ textAlign: 'center' }}>{item.totalInvoiceAmount}</td>
-                      <td style={{ textAlign: 'center' }}>{gstRate}</td>
-                      <td style={{ textAlign: 'center' }}>{item.taxAmount}</td>
-                      <td style={{ textAlign: 'center' }}>{item.billAmount}</td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tr style={{ height: 9 }}></tr>
-                <tr>
-                  <td style={{ fontWeight: "bold", textAlign: 'center' }}>Total</td>
-                  <td></td>
-                  <td></td>
-                  <td style={{ fontWeight: "bold" }}></td>
-                  <td></td>
-                  <td style={{ fontWeight: "bold", textAlign: 'center' }}>
-                    {totalInvoiceAmountOfParty}
-                  </td>
-                  <td style={{ fontWeight: "bold" }}></td>
-                  <td style={{ fontWeight: "bold", textAlign: 'center' }}>
-                    {totalTaxAmountOfParty}
-                  </td>
-                  <td style={{ fontWeight: "bold", textAlign: 'center' }}>
-                    {totalTaxableAmountOfParty}
-                  </td>
-                </tr>
-              </Table>
-            </div>
-          </CardBody>
-        </Card>
-      ) : null}
-
-      {invoiceAllDataTable ? (
-        <Card style={{ marginTop: 30 }}>
-          <CardBody>
-            <div>
-              <Row>
-                <Col className="text-end">
-                  <Button
-                    type="button"
-                    variant="outline-success"
-                    className="outline-success"
-                    style={{ marginRight: 10 }}
-                    onClick={handlePrintAllInvoiceData}
-                  >
-                    <FontAwesomeIcon
-                      icon={faPrint}
-                      style={{ marginRight: "5px" }}
-                    />
-                    Print
-                  </Button>
-                  <Button
-                    type="button"
-                    style={{ marginRight: 10 }}
-                    className="outline-primary"
-                    variant="outline-primary"
-                    onClick={handlePdfAllInvoiceData}
-                  >
-                    <FontAwesomeIcon
-                      icon={faFilePdf}
-                      style={{ marginRight: "5px" }}
-                    />
-                    PDF
-                  </Button>
-                  <Button
-                    type="button"
-                    className=""
-                    variant="outline-success"
-                    
-                    onClick={()=>getExcel(invoiceAllData)}
+                    onClick={()=>getExcel()}
                   >
                     <FontAwesomeIcon
                       icon={faFileExcel}
@@ -1093,15 +996,15 @@ export default function New_GST_Reports() {
                     <tr key={index}>
                       <td style={{ textAlign: 'center' }}>{index + 1}</td>
                       <td style={{ fontWeight: "bold", textAlign: 'center' }}>
-                        {getpartyId[item.partyId]}
+                        {item[0]}
                       </td>
-                      <td style={{ textAlign: 'center' }}> {getpartyGstNo[item.partyId]}</td>
-                      <td style={{ textAlign: 'center' }}>{item.invoiceNO}</td>
-                      <td style={{ textAlign: 'center' }}>{formatedDate(item.invoiceDate)}</td>
-                      <td style={{ textAlign: 'center' }}>{item.totalInvoiceAmount}</td>
-                      <td style={{ textAlign: 'center' }}>{gstRateMap[item.partyId]}</td>
-                      <td style={{ textAlign: 'center' }}>{item.taxAmount}</td>
-                      <td style={{ textAlign: 'center' }}>{item.billAmount}</td>
+                      <td style={{ textAlign: 'center' }}> {item[1]}</td>
+                      <td style={{ textAlign: 'center' }}>{item[2]}</td>
+                      <td>{formatedDate(item[3])}</td>
+                      <td style={{ textAlign: 'center' }}>{item[4]}</td>
+                      <td style={{ textAlign: 'center' }}>{item[5]}</td>
+                      <td style={{ textAlign: 'center' }}>{item[6]}</td>
+                      <td style={{ textAlign: 'center' }}>{item[7]}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -1116,7 +1019,9 @@ export default function New_GST_Reports() {
                     {totalAllInvoiceAmount}
                   </td>
                   <td style={{ fontWeight: "bold" }}></td>
-                  <td style={{ fontWeight: "bold", textAlign: 'center' }}>{totalAllTaxAmount}</td>
+                  <td style={{ fontWeight: "bold", textAlign: 'center' }}>
+                    {totalAllTaxAmount}
+                  </td>
                   <td style={{ fontWeight: "bold", textAlign: 'center' }}>
                     {totalAllTaxableAmount}
                   </td>
@@ -1127,116 +1032,7 @@ export default function New_GST_Reports() {
         </Card>
       ) : null}
 
-      {/* this is for invoiceDataOfAllPartyType */}
-
-      {invoicePartyTypeDataTable ? (
-        <Card style={{ marginTop: 30 }}>
-          <CardBody>
-            <div>
-              <Row>
-                <Col className="text-end">
-                  <Button
-                    type="button"
-                    className="outline-success"
-                    variant="outline-success"
-                    style={{ marginRight: 10 }}
-                    onClick={handlePrintInvoiceDataByPartyType}
-                  >
-                    <FontAwesomeIcon
-                      icon={faPrint}
-                      style={{ marginRight: "5px" }}
-                    />
-                    Print
-                  </Button>
-                  <Button
-                    type="button"
-                    className="outline-primary"
-                    variant="outline-primary"
-                    style={{ marginRight: 10 }}
-                    onClick={handlePdfInvoiceDataByPartyType}
-                  >
-                    <FontAwesomeIcon
-                      icon={faFilePdf}
-                      style={{ marginRight: "5px" }}
-                    />
-                    PDF
-                  </Button>
-                  <Button
-                    type="button"
-                    className=""
-                    variant="outline-success"
-                    
-                    onClick={()=>getExcel(invoiceDataPartyType)}
-                  >
-                    <FontAwesomeIcon
-                      icon={faFileExcel}
-                      style={{ marginRight: "5px" }}
-                    />
-                    XLS
-                  </Button>
-                </Col>
-              </Row>
-            </div>
-            <div className="table-responsive">
-              <Table
-                style={{ marginTop: 9 }}
-                className="table table-striped table-hover"
-              >
-                <thead>
-                  <tr>
-                    <th style={{ background: "#BADDDA", textAlign: 'center' }}>Sr. No</th>
-                    <th style={{ background: "#BADDDA", textAlign: 'center' }}>Party Name</th>
-                    <th style={{ background: "#BADDDA", textAlign: 'center' }}>GSTIN Of Party</th>
-                    <th style={{ background: "#BADDDA", textAlign: 'center' }}>Invoice No</th>
-                    <th style={{ background: "#BADDDA", textAlign: 'center' }}>Invoice Date</th>
-                    <th style={{ background: "#BADDDA", textAlign: 'center' }}>
-                      Total Invoice Value
-                    </th>
-                    <th style={{ background: "#BADDDA", textAlign: 'center' }}>GST Rate</th>
-                    <th style={{ background: "#BADDDA", textAlign: 'center' }}>GST Amount </th>
-                    <th style={{ background: "#BADDDA", textAlign: 'center' }}>Taxable Value</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {invoiceDataPartyType.map((item, index) => (
-                    <tr key={index}>
-                      <td style={{ textAlign: 'center' }}>{index + 1}</td>
-                      <td style={{ fontWeight: "bold", textAlign: 'center' }}>
-                        {getpartyId[item.partyId]}
-                      </td>
-                      <td style={{ textAlign: 'center' }}> {getpartyGstNo[item.partyId]}</td>
-                      <td style={{ textAlign: 'center' }}>{item.invoiceNO}</td>
-                      <td style={{ textAlign: 'center' }}>{formatedDate(item.invoiceDate)}</td>
-                      <td style={{ textAlign: 'center' }}>{item.totalInvoiceAmount}</td>
-                      <td style={{ textAlign: 'center' }}>{gstRateMap[item.partyId]}</td>
-                      <td style={{ textAlign: 'center' }}>{item.taxAmount}</td>
-                      <td style={{ textAlign: 'center' }}>{item.billAmount}</td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tr style={{ height: 9 }}></tr>
-                <tr>
-                  <td style={{ fontWeight: "bold", textAlign: 'center' }}>Total</td>
-                  <td></td>
-                  <td></td>
-                  <td style={{ fontWeight: "bold" }}></td>
-                  <td></td>
-                  <td style={{ fontWeight: "bold", textAlign: 'center' }}>
-                    {totalInvoiceAmountOfPartyType}
-                  </td>
-                  <td style={{ fontWeight: "bold" }}></td>
-                  <td style={{ fontWeight: "bold", textAlign: 'center' }}>
-                    {totalTaxAmountOfPartyType}
-                  </td>
-                  <td style={{ fontWeight: "bold", textAlign: 'center' }}>
-                    {totalTaxableAmountOfPartyType}
-                  </td>
-                </tr>
-              </Table>
-            </div>
-          </CardBody>
-        </Card>
-      ) : null}
+     
     </div>
   );
 

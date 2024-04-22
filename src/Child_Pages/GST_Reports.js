@@ -117,14 +117,12 @@ export default function GST_Reports() {
     return `${day}/${month}/${year}`;
   };
 
-  const formatDate = (inputDate, setTimeTo) => {
+  const formatDate = (inputDate) => {
     const date = new Date(inputDate);
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const day = String(date.getDate()).padStart(2, "0");
-    const hours = setTimeTo === "start" ? "00" : "23";
-    const minutes = setTimeTo === "start" ? "00" : "59";
-    return `${year}-${month}-${day} ${hours}:${minutes}`;
+    return `${year}-${month}-${day}`;
   };
 
   const formattedStartDate = formatDate(startDate, "start");
@@ -180,7 +178,7 @@ export default function GST_Reports() {
       const emailMapT = {};
       const gstNoMapT = {};
       const gstRateMapT = {};
-    
+
       data.forEach((party) => {
         namesMapT[party.partyId] = party.partyName;
         emailMapT[party.partyId] = party.email; // Store email
@@ -220,7 +218,7 @@ export default function GST_Reports() {
   const handlePartyChange = (event) => {
     const selectedPartyName = event.target.value;
     setSelectedParty(selectedPartyName);
-  
+
     if (selectedPartyName === "") {
       // Handle the case when "Select" is chosen, and no party is selected.
       // You can set default values or perform any other necessary actions here.
@@ -232,7 +230,7 @@ export default function GST_Reports() {
       const selectedParty = partys.find(
         (party) => party.partyId === selectedPartyName
       );
-  
+
       if (selectedParty) {
         // Access the properties of the selected party.
         const gstRate = selectedParty.taxApplicable === "Y" ? 18 : 0;
@@ -251,7 +249,7 @@ export default function GST_Reports() {
       }
     }
   };
-  
+
   const handlePartyType = (event) => {
     const SelectedPartyType = event.target.value;
 
@@ -261,12 +259,13 @@ export default function GST_Reports() {
     setSelectedPartyType(SelectedPartyType);
     setInvoiceAllDataTable(false);
     setInvoicePartyDataTable(false);
-     setSelectedParty("");
+    setSelectedParty("");
   };
 
   const handleReset = () => {
-     setSelectedParty("");
-     setSelectedParty("");
+    setSelectedParty("");
+    setDataStatus(false);
+    setSelectedParty("");
     setStartDate(new Date());
     setEndDate(new Date());
     setSelectedPartyType([]);
@@ -274,69 +273,122 @@ export default function GST_Reports() {
     setInvoicePartyTypeDataTable(false);
     // setInvoiceDataParty([]);
     setInvoiceAllDataTable(false);
+    setInvoiceAllData([]);
+    setgetInvoiceData([]);
     // setInvoiceAllData([]);
   };
-
+  const [dataStatus, setDataStatus] = useState(false);
+ const [getInvoiceData,setgetInvoiceData] = useState([]);
   const fetchInvoiceDataOfParty = () => {
+    if(!startDate){
+      toast.error("Start date is required",{
+        autoClose:800
+      })
+      return;
+    }
+
+    if(!endDate){
+      toast.error("End date is required",{
+        autoClose:800
+      })
+      return;
+    }
+    setDataStatus(false);
     if (selectedParty) {
-      // Make an API request here to fetch the list of airline names based on the provided criteria
-      fetch(
-        `http://${ipaddress}Invoice/invoiceDataOfParty?companyId=${companyid}&branchId=${branchId}&startDate=${formattedStartDate}&endDate=${formattedEndDate}&partyId=${selectedParty}`
+      axios.get(
+        `http://${ipaddress}Invoice/shbInvoiceSingleDataOfParty?companyId=${companyid}&branchId=${branchId}&startDate=${formatDate(startDate)}&endDate=${formatDate(endDate)}&party=${selectedParty}`
       )
-        .then((response) => response.json())
-        .then((data) => {
-          if (Array.isArray(data) && data.length > 0) {
-            // Update the 'airlines' state with the fetched data
-            setInvoiceDataParty(data);
-            console.log("Invoice Data Of Particular Party", data);
-            setInvoicePartyDataTable(true);
-            setInvoiceAllDataTable(false);
-            setInvoiceAllData([]);
+        .then((response) => {
+          console.log("Invoice Data Of Particular Party", response.data);
+          if (response.data.length > 0) {
+            const data = response.data;
+            setgetInvoiceData(data);
+            const groupedData = {};
+            setDataStatus(true);
+            data.forEach((item) => {
+              const key = item[0]; // Assuming item[0] is the value to group by
+              if (!groupedData[key]) {
+                groupedData[key] = [];
+              }
+              groupedData[key].push(item);
+            });
+            console.log('groupedData ', groupedData);
+            // Set the grouped data to state
+            setInvoiceAllData(groupedData);
+            console.log("Invoice Data Of Particular Party", response.data);
+            setInvoiceAllDataTable(true);
+            setInvoicePartyDataTable(false);
+            setInvoiceDataParty([]);
             setInvoicePartyTypeDataTable(false);
             setInvoiceDataPartyType([]);
-            toast.success("Invoice Data Found", {
+            toast.success("Data Found Successfully", {
               autoClose: 900,
               position: "top-center",
             });
           } else {
-            console.error("API response is not an array:", data);
-            toast.error("Invoice Data Not Found", {
+            console.error("API response is not an array:", response.data);
+            toast.error("Data Not Found", {
               autoClose: 900,
               position: "top-center",
             });
-            setInvoicePartyDataTable(false);
-            setInvoiceAllData([]);
             setInvoiceAllDataTable(false);
+            setInvoicePartyDataTable(false);
+            setInvoiceDataParty([]);
             setInvoicePartyTypeDataTable(false);
             setInvoiceDataPartyType([]);
           }
         })
-        .catch((error) => {});
+        .catch((error) => { });
     }
   };
- 
+  const groupedData1 = {};
   const fetchAllInvoiceData = () => {
-    fetch(
-      `http://${ipaddress}Invoice/invoiceAllDataOfParty?companyId=${companyid}&branchId=${branchId}&startDate=${formattedStartDate}&endDate=${formattedEndDate}`
+    if(!startDate){
+      toast.error("Start date is required",{
+        autoClose:800
+      })
+      return;
+    }
+
+    if(!endDate){
+      toast.error("End date is required",{
+        autoClose:800
+      })
+      return;
+    }
+    setDataStatus(false);
+    axios.get(
+      `http://${ipaddress}Invoice/shbInvoiceAllDataOfParty?companyId=${companyid}&branchId=${branchId}&startDate=${formatDate(startDate)}&endDate=${formatDate(endDate)}`
     )
-      .then((response) => response.json())
-      .then((data) => {
-        if (Array.isArray(data) && data.length > 0) {
-          // Update the 'airlines' state with the fetched data
-          setInvoiceAllData(data);
-          console.log("Invoice Data Of Particular Party", data);
+      .then((response) => {
+        console.log("Invoice Data Of Particular Party", response.data);
+        if (response.data.length > 0) {
+          const data = response.data;
+          const groupedData = {};
+          setgetInvoiceData(data);
+          data.forEach((item) => {
+            const key = item[0]; // Assuming item[0] is the value to group by
+            if (!groupedData[key]) {
+              groupedData[key] = [];
+            }
+            groupedData[key].push(item);
+          });
+          setDataStatus(true);
+          // Set the grouped data to state
+          setInvoiceAllData(groupedData);
+          console.log("Invoice Data Of Particular Party", response.data);
           setInvoiceAllDataTable(true);
           setInvoicePartyDataTable(false);
           setInvoiceDataParty([]);
           setInvoicePartyTypeDataTable(false);
           setInvoiceDataPartyType([]);
-          toast.success("Invoice Data Found", {
+          toast.success("Data Found Successfully", {
             autoClose: 900,
             position: "top-center",
           });
         } else {
-          console.error("API response is not an array:", data);
-          toast.error("Invoice Data Not Found", {
+          console.error("API response is not an array:", response.data);
+          toast.error("Data Not Found", {
             autoClose: 900,
             position: "top-center",
           });
@@ -347,43 +399,43 @@ export default function GST_Reports() {
           setInvoiceDataPartyType([]);
         }
       })
-      .catch((error) => {});
+      .catch((error) => { });
   };
   const fetchInvoiceDataOfPartyType = () => {
     // if (selectedPartyType) {
-      // Make an API request here to fetch the list of airline names based on the provided criteria
-      fetch(
-        `http://${ipaddress}Invoice/invoiceDataOfPartyType?companyId=${companyid}&branchId=${branchId}&startDate=${formattedStartDate}&endDate=${formattedEndDate}&unitType=${selectedPartyType}`
-      )
-        .then((response) => response.json())
-        .then((data) => {
-          if (Array.isArray(data) && data.length > 0) {
-            // Update the 'airlines' state with the fetched data
-            setInvoiceDataPartyType(data);
-            console.log("Invoice Data Of Particular Party", data);
-            setInvoicePartyTypeDataTable(true)
-            setInvoicePartyDataTable(false);
-            setInvoiceAllDataTable(false);
-            setInvoiceAllData([]);
-            setInvoiceDataParty([])
-            toast.success("Invoice Data Found", {
-              autoClose: 900,
-              position: "top-center",
-            });
-          } else {
-            console.error("API response is not an array:", data);
-            toast.error("Invoice Data Not Found", {
-              autoClose: 900,
-              position: "top-center",
-            });
-            setInvoicePartyDataTable(false);
-            setInvoiceAllData([]);
-            setInvoiceDataParty([])
-            setInvoiceAllDataTable(false);
-            setInvoicePartyTypeDataTable(false);
-          }
-        })
-        .catch((error) => {});
+    // Make an API request here to fetch the list of airline names based on the provided criteria
+    fetch(
+      `http://${ipaddress}Invoice/invoiceDataOfPartyType?companyId=${companyid}&branchId=${branchId}&startDate=${formattedStartDate}&endDate=${formattedEndDate}&unitType=${selectedPartyType}`
+    )
+      .then((response) => response.json())
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          // Update the 'airlines' state with the fetched data
+          setInvoiceDataPartyType(data);
+          console.log("Invoice Data Of Particular Party", data);
+          setInvoicePartyTypeDataTable(true)
+          setInvoicePartyDataTable(false);
+          setInvoiceAllDataTable(false);
+          setInvoiceAllData([]);
+          setInvoiceDataParty([])
+          toast.success("Invoice Data Found", {
+            autoClose: 900,
+            position: "top-center",
+          });
+        } else {
+          console.error("API response is not an array:", data);
+          toast.error("Invoice Data Not Found", {
+            autoClose: 900,
+            position: "top-center",
+          });
+          setInvoicePartyDataTable(false);
+          setInvoiceAllData([]);
+          setInvoiceDataParty([])
+          setInvoiceAllDataTable(false);
+          setInvoicePartyTypeDataTable(false);
+        }
+      })
+      .catch((error) => { });
     // }
   };
 
@@ -394,18 +446,18 @@ export default function GST_Reports() {
     }
   }, [selectedPartyType]);
 
-  
-  
+
+
   const handleShow = () => {
     if (startDate && endDate && !selectedParty) {
       fetchAllInvoiceData();
     } else if (startDate && endDate && selectedParty) {
       fetchInvoiceDataOfParty();
     }
-    else if(startDate && endDate && selectedPartyType && !selectedParty)
-    {
-      fetchInvoiceDataOfPartyType();
-    }
+    // else if(startDate && endDate && selectedPartyType && !selectedParty)
+    // {
+    //   fetchInvoiceDataOfPartyType();
+    // }
   };
 
   const totalInvoiceAmount = invoiceDataParty.reduce(
@@ -421,15 +473,9 @@ export default function GST_Reports() {
     0
   );
 
- 
 
-  const groupedData = invoiceAllData.reduce((acc, item) => {
-    if (!acc[item.partyId]) {
-      acc[item.partyId] = [];
-    }
-    acc[item.partyId].push(item);
-    return acc;
-  }, {});
+
+  const groupedData = '';
 
   const groupedDataPartyType = invoiceDataPartyType.reduce((acc, item) => {
     if (!acc[item.partyId]) {
@@ -445,18 +491,18 @@ export default function GST_Reports() {
       return { ...prevState, [partyId]: !prevState[partyId] };
     });
   };
- const totalAllInvoiceAmount = invoiceAllData.reduce(
-    (total, itemAll) => total + itemAll.totalInvoiceAmount,
-    0
-  );
-  const totalAllBillAmount = invoiceAllData.reduce(
-    (total, itemAll) => total + itemAll.billAmount,
-    0
-  );
-  const totalAllTaxAmount = invoiceAllData.reduce(
-    (total, itemAll) => total + itemAll.taxAmount,
-    0
-  );
+  // const totalAllInvoiceAmount = invoiceAllData.reduce(
+  //   (total, itemAll) => total + itemAll.totalInvoiceAmount,
+  //   0
+  // );
+  // const totalAllBillAmount = invoiceAllData.reduce(
+  //   (total, itemAll) => total + itemAll.billAmount,
+  //   0
+  // );
+  // const totalAllTaxAmount = invoiceAllData.reduce(
+  //   (total, itemAll) => total + itemAll.taxAmount,
+  //   0
+  // );
   const totalAllCGST = Object.keys(groupedData).reduce((total, partyId) => {
     return (
       total +
@@ -506,61 +552,36 @@ export default function GST_Reports() {
   let count = 1;
 
 
-  const totalAllInvoiceAmountType = invoiceDataPartyType.reduce(
-    (total, itemAll) => total + itemAll.totalInvoiceAmount,
+  const totalAllInvoiceAmountType = getInvoiceData.reduce(
+    (total, itemAll) => total + itemAll[5],
     0
   );
-  const totalAllBillAmountType = invoiceDataPartyType.reduce(
-    (total, itemAll) => total + itemAll.billAmount,
+  const totalAllBillAmountType = getInvoiceData.reduce(
+    (total, itemAll) => total + itemAll[7],
     0
   );
-  const totalAllTaxAmountType = invoiceDataPartyType.reduce(
-    (total, itemAll) => total + itemAll.taxAmount,
+  const totalAllTaxAmountType = getInvoiceData.reduce(
+    (total, itemAll) => total + itemAll[11],
     0
   );
-  const totalAllCGSTType = Object.keys(groupedDataPartyType).reduce((total, partyId) => {
-    return (
-      total +
-      groupedDataPartyType[partyId].reduce((partyTotal, itemAll) => {
-        if (itemAll.cgst === "Y") {
-          return partyTotal;
-        } else {
-          return partyTotal + itemAll.taxAmount / 2;
-        }
-      }, 0)
-    );
-  }, 0);
+  const totalAllCGSTType = getInvoiceData.reduce(
+    (total, itemAll) => total + itemAll[8],
+    0
+  );
 
-  const totalAllSGSTType = Object.keys(groupedDataPartyType).reduce((total, partyId) => {
-    return (
-      total +
-      groupedDataPartyType[partyId].reduce((partyTotal, itemAll) => {
-        if (itemAll.sgst === "Y") {
-          return partyTotal;
-        } else {
-          return partyTotal + itemAll.taxAmount / 2;
-        }
-      }, 0)
-    );
-  }, 0);
-
-  const totalAllIGSTType = Object.keys(groupedDataPartyType).reduce((total, partyId) => {
-    return (
-      total +
-      groupedDataPartyType[partyId].reduce((partyTotal, itemAll) => {
-        if (itemAll.cgst === "Y") {
-          return partyTotal;
-        } else {
-          return partyTotal + itemAll.taxAmount / 2;
-        }
-      }, 0)
-    );
-  }, 0);
+  const totalAllSGSTType = getInvoiceData.reduce(
+    (total, itemAll) => total + itemAll[9],
+    0
+  );
+  const totalAllIGSTType = getInvoiceData.reduce(
+    (total, itemAll) => total + itemAll[10],
+    0
+  );
 
   const handlePdf = async () => {
     try {
       const response = await axios.post(
-        `http://${ipaddress}Invoice/invoicPrintOfParty?companyId=${companyid}&branchId=${branchId}&startDate=${formattedStartDate}&endDate=${formattedEndDate}&partyId=${selectedParty}`
+        `http://${ipaddress}Invoice/gstPrint?companyId=${companyid}&branchId=${branchId}&startDate=${formattedStartDate}&endDate=${formattedEndDate}&partyId=${selectedParty}`
       );
       // toast.success("GST Summary PDF Created Successfully ", { position: "top-center" ,autoClose: 900});
 
@@ -597,13 +618,13 @@ export default function GST_Reports() {
       } else {
         throw new Error("Failed to generate PDF");
       }
-    } catch (error) {}
+    } catch (error) { }
   };
 
   const handlePrint = async () => {
     try {
       const response = await axios.post(
-        `http://${ipaddress}Invoice/invoicPrintOfParty?companyId=${companyid}&branchId=${branchId}&startDate=${formattedStartDate}&endDate=${formattedEndDate}&partyId=${selectedParty}`
+        `http://${ipaddress}Invoice/gstPrint?companyId=${companyid}&branchId=${branchId}&startDate=${formattedStartDate}&endDate=${formattedEndDate}&partyId=${selectedParty}`
       );
       if (response.status === 200) {
         const base64PDF = response.data;
@@ -726,7 +747,7 @@ export default function GST_Reports() {
       } else {
         throw new Error("Failed to generate PDF");
       }
-    } catch (error) {}
+    } catch (error) { }
   };
 
   const handlePrintInvoiceDataByPartyType = async () => {
@@ -810,7 +831,7 @@ export default function GST_Reports() {
       } else {
         throw new Error("Failed to generate PDF");
       }
-    } catch (error) {}
+    } catch (error) { }
   };
   let totalIgst = 0;
   let totalCgst = 0;
@@ -825,6 +846,11 @@ export default function GST_Reports() {
       totalSgst += item.taxAmount / 2;
     }
   }
+
+  let totalValue1 = 0;
+  let totalValue2 = 0;
+  let totalValue3 = 0;
+  const uniqueData = new Set();
 
   return (
     <div className="Container">
@@ -886,14 +912,16 @@ export default function GST_Reports() {
                 </div>{" "}
               </FormGroup>
             </Col>
-            <Col md={3}>
+            <Col md={5}>
               <FormGroup>
-                <label htmlFor="company" className="inputhead">
+                <Label className="forlabel" for="branchId" style={{ display: "block", paddingBottom: 0, marginBottom: 0 }}>
                   Select Party
-                </label>
+                </Label>
+
                 <select
                   name="company"
                   id="dw1"
+                  style={{ paddingTop: 0 }}
                   className=""
                   onChange={handlePartyChange}
                   value={selectedParty}
@@ -905,9 +933,10 @@ export default function GST_Reports() {
                     </option>
                   ))}
                 </select>
+
               </FormGroup>
             </Col>
-            <Col md={3}>
+            {/* <Col md={3}>
               <FormGroup>
                 <label htmlFor="company" className="inputhead">
                   Select Party Type
@@ -927,7 +956,7 @@ export default function GST_Reports() {
                   ))}
                 </select>
               </FormGroup>
-            </Col>
+            </Col> */}
           </Row>
           <Row>
             <Col md={4}>
@@ -961,7 +990,7 @@ export default function GST_Reports() {
           </Row>
         </CardBody>
       </Card>
-      {invoicePartyDataTable ? (
+      {dataStatus ? (
         <Card style={{ marginTop: 30 }}>
           <CardBody>
             <div>
@@ -1014,119 +1043,10 @@ export default function GST_Reports() {
                   </tr>
                 </thead>
                 <tbody>
-                  <React.Fragment>
-                    <tr>
-                      <td>{1}</td>
-                      <td colSpan={3} style={{ fontWeight: "bold" }}>
-                        {getpartyId[selectedParty]}
-                      </td>
-                      <td colSpan={3}>{selectedPartyEmail}</td>
-                      <td colSpan={3}>{selectedPartyGstNo}</td>
-                    </tr>
-                  </React.Fragment>
-                  {invoiceDataParty.map((item, index) => {
-                    // Calculate and display values based on your logic
-                    let igst, cgst, sgst;
 
-                    if (item.igst === "Y") {
-                      igst = item.taxAmount;
-                      cgst = 0;
-                      sgst = 0;
-                    } else {
-                      igst = 0;
-                      cgst = item.taxAmount / 2;
-                      sgst = item.taxAmount / 2;
-                    }
+                  {Object.keys(invoiceAllData).map((partyId) => {
+                    const group = invoiceAllData[partyId];
 
-                    return (
-                      <React.Fragment key={index}>
-                        <tr>
-                          <td></td>
-                          <td>{item.billNO}</td>
-                          <td>{formatedDate(item.invoiceDate)}</td>
-                          <td>{item.totalInvoiceAmount}</td>
-                          <td>{gstRate || "0"}</td>
-                          <td>{item.billAmount}</td>
-                          <td>{igst}</td>
-                          <td>{cgst}</td>
-                          <td>{sgst}</td>
-                          <td>{item.taxAmount}</td>
-                        </tr>
-                      </React.Fragment>
-                    );
-                  })}
-                  <tr>
-                    <td style={{ fontWeight: "bold" }}>Total</td>
-                    <td></td>
-                    <td></td>
-                    <td  style={{ fontWeight: "bold" }}>{totalInvoiceAmount}</td>
-                    <td></td>
-                    <td  style={{ fontWeight: "bold" }}>{totalBillAmount}</td>
-                    <td  style={{ fontWeight: "bold" }}>{totalIgst}</td>
-                    <td  style={{ fontWeight: "bold" }}>{totalCgst}</td>
-                    <td  style={{ fontWeight: "bold" }}>{totalSgst}</td>
-                    <td  style={{ fontWeight: "bold" }}>{totalTaxAmount}</td>
-                  </tr>
-                </tbody>
-              </Table>
-            </div>
-          </CardBody>
-        </Card>
-      ) : null}
-  
-      {invoiceAllDataTable ? (
-        <Card style={{ marginTop: 30 }}>
-          <CardBody>
-            <div>
-              <Row>
-                <Col className="text-end">
-                  <Button
-                    type="button"
-                    className="btn btn-success"
-                    style={{ marginRight: 10 }}
-                    onClick={handlePrintAllInvoiceData}
-                  >
-                    <FontAwesomeIcon
-                      icon={faPrint}
-                      style={{ marginRight: "5px" }}
-                    />
-                    Print
-                  </Button>
-                  <Button
-                    type="button"
-                    className="btn btn-primary"
-                    onClick={handlePdfAllInvoiceData}
-                  >
-                    <FontAwesomeIcon
-                      icon={faFilePdf}
-                      style={{ marginRight: "5px" }}
-                    />
-                    PDF
-                  </Button>
-                </Col>
-              </Row>
-            </div>
-            <div className="table-responsive">
-              <Table
-                style={{ marginTop: 9 }}
-                className="table table-striped table-hover"
-              >
-                <thead>
-                  <tr>
-                    <th style={{ background: "#BADDDA" }}>Sr. No</th>
-                    <th style={{ background: "#BADDDA" }}>Bill No.</th>
-                    <th style={{ background: "#BADDDA" }}>Bill Date</th>
-                    <th style={{ background: "#BADDDA" }}>Bill Amount</th>
-                    <th style={{ background: "#BADDDA" }}>GST Rate</th>
-                    <th style={{ background: "#BADDDA" }}>Taxable Amount</th>
-                    <th style={{ background: "#BADDDA" }}>IGST</th>
-                    <th style={{ background: "#BADDDA" }}>CGST</th>
-                    <th style={{ background: "#BADDDA" }}>SGST</th>
-                    <th style={{ background: "#BADDDA" }}>GST Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {Object.keys(groupedData).map((partyId) => {
                     // Initialize party-wise totals
                     let partyTotalInvoiceAmount = 0;
                     let partyTotalBillAmount = 0;
@@ -1137,7 +1057,7 @@ export default function GST_Reports() {
 
                     return (
                       <React.Fragment key={partyId}>
-                        {groupedData[partyId].map((itemAll, index) => {
+                        {group.map((itemAll, index) => {
                           let igst, cgst, sgst;
 
                           if (itemAll.igst === "Y") {
@@ -1151,47 +1071,41 @@ export default function GST_Reports() {
                           }
 
                           // Update party-wise totals
-                          partyTotalInvoiceAmount += itemAll.totalInvoiceAmount;
-                          partyTotalBillAmount += itemAll.billAmount;
-                          partyTotalTaxAmount += itemAll.taxAmount;
-                          partyTotalIGST += igst;
-                          partyTotalCGST += cgst;
-                          partyTotalSGST += sgst;
-                          
+                          partyTotalInvoiceAmount += itemAll[5];
+                          partyTotalBillAmount += itemAll[7];
+                          partyTotalTaxAmount += itemAll[11];
+                          partyTotalIGST += itemAll[10];
+                          partyTotalCGST += itemAll[8];
+                          partyTotalSGST += itemAll[9];
+
                           return (
                             <React.Fragment key={index}>
-                              {index === 0 && !displayedPartyNames[partyId] && (
+                              {index === 0 && (
                                 <tr>
                                   <td>{count++}</td>
-                                  <td
-                                    colSpan={3}
-                                    style={{ fontWeight: "bold" }}
-                                  >
-                                    {getpartyId[itemAll.partyId]}
+                                  <td colSpan={3} style={{ fontWeight: "bold" }}>
+                                    {itemAll[0]}
                                   </td>
-                                  <td colSpan={3}>
-                                    {getpartyEmail[itemAll.partyId]}
-                                  </td>
-                                  <td colSpan={3}>
-                                    {getpartyGstNo[itemAll.partyId]}
-                                  </td>
+                                  <td colSpan={3}>{itemAll[1]}</td>
+                                  <td colSpan={3}>{itemAll[2]}</td>
                                 </tr>
                               )}
                               <tr>
                                 <td></td>
-                                <td>{itemAll.billNO}</td>
-                                <td>{formatedDate(itemAll.invoiceDate)}</td>
-                                <td>{itemAll.totalInvoiceAmount}</td>
-                                <td>{gstRateMap[itemAll.partyId]}</td>
-                                <td>{itemAll.billAmount}</td>
-                                <td>{igst}</td>
-                                <td>{cgst}</td>
-                                <td>{sgst}</td>
-                                <td>{itemAll.taxAmount}</td>
+                                <td>{itemAll[3]}</td>
+                                <td>{formatedDate(itemAll[4])}</td>
+                                <td>{itemAll[5]}</td>
+                                <td>{itemAll[6]}</td>
+                                <td>{itemAll[7]}</td>
+                                <td>{itemAll[10]}</td>
+                                <td>{itemAll[8]}</td>
+                                <td>{itemAll[9]}</td>
+                                <td>{itemAll[11]}</td>
                               </tr>
                             </React.Fragment>
                           );
                         })}
+                        {/* Render Party Total row */}
                         <tr>
                           <td style={{ fontWeight: "bold" }}>Party Total</td>
                           <td></td>
@@ -1219,201 +1133,29 @@ export default function GST_Reports() {
                       </React.Fragment>
                     );
                   })}
-                </tbody>
+                  <tr>
+                    <td style={{ fontWeight: "bold" }}>Grand Total</td>
+                    <td></td>
+                    <td></td>
+                    <td style={{ fontWeight: "bold" }}>
+                      {totalAllInvoiceAmountType}
+                    </td>
+                    <td></td>
+                    <td style={{ fontWeight: "bold" }}>{totalAllBillAmountType}</td>
+                    <td style={{ fontWeight: "bold" }}>{totalAllIGSTType}</td>
+                    <td style={{ fontWeight: "bold" }}>{totalAllCGSTType}</td>
+                    <td style={{ fontWeight: "bold" }}>{totalAllSGSTType}</td>
+                    <td style={{ fontWeight: "bold" }}>{totalAllTaxAmountType}</td>
+                  </tr>
 
-                <tr>
-                  <td style={{ fontWeight: "bold" }}>Grand Total</td>
-                  <td></td>
-                  <td></td>
-                  <td style={{ fontWeight: "bold" }}>
-                    {totalAllInvoiceAmount}
-                  </td>
-                  <td></td>
-                  <td style={{ fontWeight: "bold" }}>{totalAllBillAmount}</td>
-                  <td style={{ fontWeight: "bold" }}>{totalAllIGST}</td>
-                  <td style={{ fontWeight: "bold" }}>{totalAllCGST}</td>
-                  <td style={{ fontWeight: "bold" }}>{totalAllSGST}</td>
-                  <td style={{ fontWeight: "bold" }}>{totalAllTaxAmount}</td>
-                </tr>
+                </tbody>
               </Table>
             </div>
           </CardBody>
         </Card>
       ) : null}
 
-
-
-
-
-
-{/* this is for invoiceDataOfAllPartyType */}
-      
- {invoicePartyTypeDataTable ? (
-        <Card style={{ marginTop: 30 }}>
-          <CardBody>
-            <div>
-              <Row>
-                <Col className="text-end">
-                  <Button
-                    type="button"
-                    className="btn btn-success"
-                    style={{ marginRight: 10 }}
-                    onClick={handlePrintInvoiceDataByPartyType}
-                  >
-                    <FontAwesomeIcon
-                      icon={faPrint}
-                      style={{ marginRight: "5px" }}
-                    />
-                    Print
-                  </Button>
-                  <Button
-                    type="button"
-                    className="btn btn-primary"
-                    onClick={handlePdfInvoiceDataByPartyType}
-                  >
-                    <FontAwesomeIcon
-                      icon={faFilePdf}
-                      style={{ marginRight: "5px" }}
-                    />
-                    PDF
-                  </Button>
-                </Col>
-              </Row>
-            </div>
-            <div className="table-responsive">
-              <Table
-                style={{ marginTop: 9 }}
-                className="table table-striped table-hover"
-              >
-                <thead>
-                  <tr>
-                    <th style={{ background: "#BADDDA" }}>Sr. No</th>
-                    <th style={{ background: "#BADDDA" }}>Bill No.</th>
-                    <th style={{ background: "#BADDDA" }}>Bill Date</th>
-                    <th style={{ background: "#BADDDA" }}>Bill Amount</th>
-                    <th style={{ background: "#BADDDA" }}>GST Rate</th>
-                    <th style={{ background: "#BADDDA" }}>Taxable Amount</th>
-                    <th style={{ background: "#BADDDA" }}>IGST</th>
-                    <th style={{ background: "#BADDDA" }}>CGST</th>
-                    <th style={{ background: "#BADDDA" }}>SGST</th>
-                    <th style={{ background: "#BADDDA" }}>GST Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {Object.keys(groupedDataPartyType).map((partyId) => {
-                    // Initialize party-wise totals
-                    let partyTotalInvoiceAmount = 0;
-                    let partyTotalBillAmount = 0;
-                    let partyTotalTaxAmount = 0;
-                    let partyTotalIGST = 0;
-                    let partyTotalCGST = 0;
-                    let partyTotalSGST = 0;
-
-                    return (
-                      <React.Fragment key={partyId}>
-                        {groupedDataPartyType[partyId].map((itemAll, index) => {
-                          let igst, cgst, sgst;
-
-                          if (itemAll.igst === "Y") {
-                            igst = itemAll.taxAmount;
-                            cgst = 0;
-                            sgst = 0;
-                          } else {
-                            igst = 0;
-                            cgst = itemAll.taxAmount / 2;
-                            sgst = itemAll.taxAmount / 2;
-                          }
-
-                          // Update party-wise totals
-                          partyTotalInvoiceAmount += itemAll.totalInvoiceAmount;
-                          partyTotalBillAmount += itemAll.billAmount;
-                          partyTotalTaxAmount += itemAll.taxAmount;
-                          partyTotalIGST += igst;
-                          partyTotalCGST += cgst;
-                          partyTotalSGST += sgst;
-
-                          return (
-                            <React.Fragment key={index}>
-                              {index === 0 && !displayedPartyNames[partyId] && (
-                                <tr>
-                                  <td>{count++}</td>
-                                  <td
-                                    colSpan={3}
-                                    style={{ fontWeight: "bold" }}
-                                  >
-                                    {getpartyId[itemAll.partyId]}
-                                  </td>
-                                  <td colSpan={3}>
-                                    {getpartyEmail[itemAll.partyId]}
-                                  </td>
-                                  <td colSpan={3}>
-                                    {getpartyGstNo[itemAll.partyId]}
-                                  </td>
-                                </tr>
-                              )}
-                              <tr>
-                                <td></td>
-                                <td>{itemAll.billNO}</td>
-                                <td>{formatedDate(itemAll.invoiceDate)}</td>
-                                <td>{itemAll.totalInvoiceAmount}</td>
-                                <td>{gstRateMap[itemAll.partyId]}</td>
-                                <td>{itemAll.billAmount}</td>
-                                <td>{igst}</td>
-                                <td>{cgst}</td>
-                                <td>{sgst}</td>
-                                <td>{itemAll.taxAmount}</td>
-                              </tr>
-                            </React.Fragment>
-                          );
-                        })}
-                        <tr>
-                          <td style={{ fontWeight: "bold" }}>Party Total</td>
-                          <td></td>
-                          <td></td>
-                          <td style={{ fontWeight: "bold" }}>
-                            {partyTotalInvoiceAmount}
-                          </td>
-                          <td></td>
-                          <td style={{ fontWeight: "bold" }}>
-                            {partyTotalBillAmount}
-                          </td>
-                          <td style={{ fontWeight: "bold" }}>
-                            {partyTotalIGST}
-                          </td>
-                          <td style={{ fontWeight: "bold" }}>
-                            {partyTotalCGST}
-                          </td>
-                          <td style={{ fontWeight: "bold" }}>
-                            {partyTotalSGST}
-                          </td>
-                          <td style={{ fontWeight: "bold" }}>
-                            {partyTotalTaxAmount}
-                          </td>
-                        </tr>
-                      </React.Fragment>
-                    );
-                  })}
-                </tbody>
-
-                <tr>
-                  <td style={{ fontWeight: "bold" }}>Grand Total</td>
-                  <td></td>
-                  <td></td>
-                  <td style={{ fontWeight: "bold" }}>
-                    {totalAllInvoiceAmountType}
-                  </td>
-                  <td></td>
-                  <td style={{ fontWeight: "bold" }}>{totalAllBillAmountType}</td>
-                  <td style={{ fontWeight: "bold" }}>{totalAllIGSTType}</td>
-                  <td style={{ fontWeight: "bold" }}>{totalAllCGSTType}</td>
-                  <td style={{ fontWeight: "bold" }}>{totalAllSGSTType}</td>
-                  <td style={{ fontWeight: "bold" }}>{totalAllTaxAmountType}</td>
-                </tr>
-              </Table>
-            </div>
-          </CardBody>
-        </Card>
-      ) : null} 
+    
     </div>
   );
 }

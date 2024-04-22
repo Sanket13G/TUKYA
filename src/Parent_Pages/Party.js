@@ -154,7 +154,8 @@ export default function Party() {
     approvedDate: '',
     status: '',
     invoiceType: "Periodic",
-    partyStatus: "A"
+    partyStatus: "A",
+    stopTrans: ''
   });
 
   const handleAddPartyData = (event) => {
@@ -523,7 +524,7 @@ export default function Party() {
     };
 
 
-  
+
 
 
     // function which Decode the code 
@@ -573,7 +574,7 @@ export default function Party() {
     console.log(DecodedPartyId1);
 
 
-// console.log(`http://${ipaddress}parties/resetpassword/${ipAddressBeforeColon}/${encodedCompanyId}/${encodedBranchId}/${encodedPartyId}`);
+    // console.log(`http://${ipaddress}parties/resetpassword/${ipAddressBeforeColon}/${encodedCompanyId}/${encodedBranchId}/${encodedPartyId}`);
 
     try {
       axios.post(`http://${ipaddress}parties/resetpassword/${ipAddressBeforeColon}/${encodedCompanyId}/${encodedBranchId}/${encodedPartyId}`, party);
@@ -1123,20 +1124,20 @@ export default function Party() {
 
   const getExcel = (parties) => {
     const filename = `Parties.xlsx`; // Note: Changed file extension to xlsx
-    axios.post(`http://${ipaddress}parties/allPartyExcel`, parties,{ responseType: 'blob' }) // Added responseType: 'blob'
+    axios.post(`http://${ipaddress}parties/allPartyExcel`, parties, { responseType: 'blob' }) // Added responseType: 'blob'
       .then(async (response) => {
         const blob = new Blob([response.data], { type: response.headers['content-type'] });
-  
+
         // Create a temporary URL for the blob
         const url = window.URL.createObjectURL(blob);
-  
+
         // Create a link element to trigger the download
         const a = document.createElement("a");
         a.href = url;
         a.download = filename;
         document.body.appendChild(a);
         a.click();
-  
+
         // Clean up
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
@@ -1194,6 +1195,20 @@ export default function Party() {
     fetchParties();
     handleSearch();
   }
+
+  const handleCheckboxChange = (partyId) => {
+    currentItems.map(party => {
+      if (party.partyId === partyId) {
+        return {
+          ...party,
+          stopTrans: party.stopTrans === 'Y' ? 'N' : 'Y'
+        };
+      }
+    })
+
+  };
+
+
 
   return (
     <div className='Container'>
@@ -1266,7 +1281,7 @@ export default function Party() {
                 <Button
                   color="success"
                   outline
-                  onClick={()=>getExcel(parties)}
+                  onClick={() => getExcel(parties)}
                   style={{ marginRight: '5px' }}
                 >
                   <FontAwesomeIcon icon={faFileExcel} style={{ marginRight: '5px' }} />
@@ -1661,6 +1676,25 @@ export default function Party() {
                     </FormGroup>
                   </Col>
                 </Row>
+                <Row>
+                <Col md={4} >
+                    <FormGroup>
+                      <Label className="forlabel" for="branchId">Stop Transaction</Label>
+                      <select
+                        id="stopTrans"
+                        className="form-control form-select"
+                        onChange={handleAddPartyData}
+                        required
+                        name="stopTrans"
+                        value={formData.stopTrans}
+                      >
+                        <option value="">Select</option>
+                        <option value="Y">Yes</option>
+                        <option value="N">No</option>
+                      </select>
+                    </FormGroup>
+                  </Col>
+                </Row>
                 <Row className="text-center">
                   {modalstatus === 'add' ? (
                     <Col >
@@ -1691,7 +1725,7 @@ export default function Party() {
           </Modal>
 
           <div className="table-responsive">
-            <Table className="table table-striped table-hover">
+            <Table className="table table-bordered text-center custom-table mt-3">
               <thead>
                 <tr>
 
@@ -1702,6 +1736,7 @@ export default function Party() {
 
                   <th style={{ background: '#BADDDA' }}>Entity ID</th>
                   <th style={{ background: '#BADDDA' }}>Credit Limit</th>
+
                   <th style={{ backgroundColor: '#BADDDA' }} scope="col">Re-Send</th>
                   <th style={{ background: "#BADDDA" }}>Renew <br /> LOA</th>
                   <th style={{ background: '#BADDDA' }}>Action</th>
@@ -1718,6 +1753,8 @@ export default function Party() {
 
                     <td>{party.entityId}</td>
                     <td>{party.creditLimit}</td>
+                    
+
                     {/* Add other table data for displaying party data */}
                     <td className="table-column"> <FaLink size={22} fill="orange" onClick={() => handlePwdReset(party.partyId)} style={{ marginRight: '10px' }} /></td>
                     <td>

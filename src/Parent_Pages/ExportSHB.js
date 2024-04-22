@@ -14,7 +14,7 @@ import contachimage from "../services/contacts.png"
 import DGDCimage from "../Images/DGDC.png";
 import InviceService from "../services/InviceService"
 import ReactLoading from 'react-loading';
-import { FaClosedCaptioning, FaTruck, FaHandPaper, FaPersonBooth, FaTruckLoading } from 'react-icons/fa';
+import { FaClosedCaptioning, FaTruck, FaHandPaper, FaPersonBooth, FaTruckLoading, FaArrowAltCircleRight } from 'react-icons/fa';
 import snzLoge from "../Images/Snz_Parcels.jpg"
 import {
   Card,
@@ -173,7 +173,7 @@ export default function ExportSHB() {
     const start = convertToFormattedDate(searchFilters1.startDate) + " 00:00:00";
     const end = convertToFormattedDate(searchFilters1.endDate) + " 23:59:59";
     axios
-      .get(`http://${ipaddress}exportshb/search?searchValue=${searchFilters1.serNo}&companyid=${companyid}&branchId=${branchId}&holdStatus=${searchFilters1.hold}&snzStatus=${searchFilters1.snzParcel}&hpStatus=${searchFilters1.heavy}&dgdcStatus=${searchFilters1.dgdcStatus}&startDate=${start}&endDate=${end}`)
+      .get(`http://${ipaddress}exportshb/search?searchValue=${searchFilters1.serNo}&companyid=${companyid}&branchId=${branchId}&holdStatus=${searchFilters1.hold}&snzStatus=${searchFilters1.snzParcel}&hpStatus=${searchFilters1.heavy}&dgdcStatus=${searchFilters1.dgdcStatus}&startDate=${start}&endDate=${end}&logintype=${logintype}&loginid=${logintypeid}`)
       .then((response) => {
         setloading(false);
         setFilteredData(response.data);
@@ -1056,12 +1056,18 @@ export default function ExportSHB() {
     }
   };
 
+   const [getRepresentId,setGetRepresentId] = useState('');
   const getConsoleRepresentData = (id) => {
     axios
       .get(`http://${ipaddress}represent/getAllConsoleReprsent/${companyid}/${branchId}/${id}`)
       .then((response) => {
+        const data = console.data;
         console.log('setGetrepresentData ', response.data);
         setGetrepresentData(response.data); // Store the list in the state
+        const namesMap = {};
+        data.forEach(party => {
+          namesMap[party.representativeId] = party.firstName+ ' '+party.lastName;
+        });
       })
       .catch((error) => {
       });
@@ -1815,22 +1821,22 @@ export default function ExportSHB() {
     axios.get(`http://${ipaddress}exportshb/getCustomTpData/${companyid}/${branchId}/${id}`)
       .then((response) => {
         const data = response.data;
-        if(data.length>0){
+        if (data.length > 0) {
           setgetExportdataForCTP(data);
 
-          toast.success("Data found successfully",{
-            autoClose:800
+          toast.success("Data found successfully", {
+            autoClose: 800
           })
         }
-        else{
-          toast.error("Data not found",{
-            autoClose:800
+        else {
+          toast.error("Data not found", {
+            autoClose: 800
           })
         }
       })
       .catch((error) => {
-        toast.error("Data not found",{
-          autoClose:800
+        toast.error("Data not found", {
+          autoClose: 800
         })
       })
   }
@@ -1865,136 +1871,667 @@ export default function ExportSHB() {
     setSelectAll1(!selectAll1);
   };
 
-  const [customTP,setcustomTP] = useState('');
-  const [customTPDate,setcustomTPDate] = useState(new Date());
+  const [customTP, setcustomTP] = useState('');
+  const [customTPDate, setcustomTPDate] = useState(new Date());
 
   const handleCustomTPDateChange = (date) => {
     setcustomTPDate(date);
   };
 
-  const formatDateToYYYYMMDDHHMMSS=(dateString)=> {
+  const formatDateToYYYYMMDDHHMMSS = (dateString) => {
     const date = new Date(dateString);
-    
+
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     const hours = String(date.getHours()).padStart(2, '0');
     const minutes = String(date.getMinutes()).padStart(2, '0');
     const seconds = String(date.getSeconds()).padStart(2, '0');
-  
+
     return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
   }
+
+
   
 
-  const saveCustomTP = () =>{
-    if(selectedRows1.length === 0){
-      toast.error("Please select atleast one checkbox",{
-        autoClose:800
+
+  const saveCustomTP = () => {
+    if (selectedRows1.length === 0) {
+      toast.error("Please select atleast one checkbox", {
+        autoClose: 800
       })
       return;
     }
 
-    if(!customTP){
-      toast.error("Custom TP is required",{
-        autoClose:800
+    if (!customTP) {
+      toast.error("Custom TP is required", {
+        autoClose: 800
       })
       return;
     }
 
-    if(!customTPDate){
-      toast.error("Custom TP date is required",{
-        autoClose:800
+    if (!customTPDate) {
+      toast.error("Custom TP date is required", {
+        autoClose: 800
       })
       return;
     }
 
 
-    axios.post(`http://${ipaddress}exportshb/saveCustomTP?companyId=${companyid}&branchId=${branchId}&customTP=${customTP}&customTPDate=${formatDateToYYYYMMDDHHMMSS(customTPDate)}`,selectedRows1)
-    .then((response)=>{
-       const data = response.data;
-       if(data === 'success'){
-        toast.success("Exports update successfully",{
-          autoClose:800
+    axios.post(`http://${ipaddress}exportshb/saveCustomTP?companyId=${companyid}&branchId=${branchId}&customTP=${customTP}&customTPDate=${formatDateToYYYYMMDDHHMMSS(customTPDate)}`, selectedRows1)
+      .then((response) => {
+        const data = response.data;
+        if (data === 'success') {
+          toast.success("Exports update successfully", {
+            autoClose: 800
+          })
+          closeModalforcustomtp();
+          search(searchFilters);
+        }
+        else {
+          toast.error("Something went wrong", {
+            autoClose: 800
+          })
+        }
+      })
+      .catch((error) => {
+        toast.error("Something went wrong", {
+          autoClose: 800
         })
-        closeModalforcustomtp();
-        search(searchFilters);
-       }
-       else{
-        toast.error("Something went wrong",{
-          autoClose:800
-        })
-       }
-    })
-    .catch((error)=>{
-      toast.error("Something went wrong",{
-        autoClose:800
       })
-    })
   }
 
+
+  const [port, setPort] = useState([]);
+  const getPortData = (id) => {
+    setPort([]);
+   
+    axios.get(`http://${ipaddress}exportshb/getPort/${companyid}/${branchId}/${id}`)
+      .then((response) => {
+        setPort(response.data);
+      })
+      .catch((error) => {
+
+      })
+  }
 
   const [isModalOpenforCustomPctm, setIsModalOpenforCustomPctm] = useState(false);
   const [selectConsoleforCustomPctm, setselectConsoleforCustomPctm] = useState('');
+
+  const handleSelectedPctm = (e) =>{
+    setselectConsoleforCustomPctm(e.target.value);
+    getPortData(e.target.value);
+  }
+
+  const [selectPort, setselectPort] = useState('');
   const [getExportdataForCPctm, setgetExportdataForCPctm] = useState([]);
   const openModalforCustomPctm = () => {
     setIsModalOpenforCustomPctm(true);
     getConsoleData();
+    
   };
 
-  const closeModalforCustomPctm = () =>{
+  const closeModalforCustomPctm = () => {
     setgetExportdataForCPctm([]);
     setselectConsoleforCustomPctm('');
     setIsModalOpenforCustomPctm(false);
+    setselectPort('');
+    setcustomTPDate(new Date());
+    setcustomTP('');
+    setSelectAll4(false);
+    setSelectedRows4([]);
   }
+
+  const getCustomPctmData = (id,port) => {
+    setgetExportdataForCPctm([]);
+    axios.get(`http://${ipaddress}exportshb/getCustomPctmData/${companyid}/${branchId}/${id}/${port}`)
+      .then((response) => {
+        const data = response.data;
+        console.log("pctm ",data);
+        if (data.length > 0) {
+          setgetExportdataForCPctm(data);
+
+          toast.success("Data found successfully", {
+            autoClose: 800
+          })
+        }
+        else {
+          toast.error("Data not found", {
+            autoClose: 800
+          })
+        }
+      })
+      .catch((error) => {
+        toast.error("Data not found", {
+          autoClose: 800
+        })
+      })
+  }
+
+
+  const [selectedRows4, setSelectedRows4] = useState([]);
+  const [selectAll4, setSelectAll4] = useState(false);
+  
+  const handleCheckboxChange4 = (item) => {
+    // Toggle the selection state for the clicked row
+    if (selectedRows4.includes(item)) {
+      setSelectedRows4(selectedRows4.filter((row) => row !== item));
+      setSelectAll4(false); // Uncheck header checkbox if a row is unchecked
+    } else {
+      setSelectedRows4([...selectedRows4, item]);
+      // Check if all rows are selected
+      if (selectedRows4.length + 1 === getExportdataForCPctm.length) {
+        setSelectAll4(true); // Check header checkbox if all rows are selected
+      }
+    }
+  };
+  
+  const handleSelectAll4 = () => {
+    if (selectAll4) {
+      setSelectedRows4([]);
+    } else {
+      setSelectedRows4([...getExportdataForCPctm]); // Clone the array
+    }
+    setSelectAll4(!selectAll4);
+  };
+
+
+  const saveCustomPctm = () => {
+    if (selectedRows4.length === 0) {
+      toast.error("Please select atleast one checkbox", {
+        autoClose: 800
+      })
+      return;
+    }
+
+    if (!customTP) {
+      toast.error("Custom PCTM is required", {
+        autoClose: 800
+      })
+      return;
+    }
+
+    if (!customTPDate) {
+      toast.error("Custom PCTM date is required", {
+        autoClose: 800
+      })
+      return;
+    }
+
+
+    axios.post(`http://${ipaddress}exportshb/saveCustomPctm?companyId=${companyid}&branchId=${branchId}&customTP=${customTP}&customTPDate=${formatDateToYYYYMMDDHHMMSS(customTPDate)}`, selectedRows4)
+      .then((response) => {
+        const data = response.data;
+        if (data === 'success') {
+          toast.success("Exports update successfully", {
+            autoClose: 800
+          })
+          closeModalforCustomPctm();
+          search(searchFilters);
+        }
+        else {
+          toast.error("Something went wrong", {
+            autoClose: 800
+          })
+        }
+      })
+      .catch((error) => {
+        toast.error("Something went wrong", {
+          autoClose: 800
+        })
+      })
+  }
+
 
   return (
     <div className="container">
-      <h5 className="pageHead" style={{ fontFamily: 'Your-Heading-Font', paddingLeft: '2%', paddingRight: '-50px' }} > <FontAwesomeIcon
-        icon={faPlaneDeparture}
-        style={{
-          marginRight: '8px',
-          color: 'black', // Set the color to golden
-        }}
-      /> Export </h5>
-
-      {loading && (
-        <div style={styles.overlay}>
-          <ReactLoading type="spin" color="#0000FF" height={300} width={80} />
-        </div>
-      )}
 
 
-      <Card>
-        <CardBody>
-          <div className="row">
-            <div className="col-md-6">
+      {(logintype === 'Party' || logintype === 'CHA' || logintype === 'Carting Agent' || logintype === 'Console') ? (
 
-            </div>
-            <div className="col-md-6 d-flex justify-content-end">
-              <div className="btn-group">
-                <DropdownButton
-                  title={<span>
+        <>
+          <h5 className="pageHead" style={{ fontFamily: 'Your-Heading-Font', paddingLeft: '2%', paddingRight: '-50px' }} > <FontAwesomeIcon
+            icon={faPlaneDeparture}
+            style={{
+              marginRight: '8px',
+              color: 'black', // Set the color to golden
+            }}
+          /> Export </h5>
 
-                    <span>  <FontAwesomeIcon icon={faAtom} style={{ marginRight: "5px" }} />Action</span>
-                  </span>}
-                  style={{ float: 'right', background: 'none' }}
-                  variant="outline-success"
-                >
-                  <Dropdown.Item onClick={() => handleOptionButtonClick("add")}>   <FontAwesomeIcon icon={faPlus} style={{ marginRight: "5px" }} />Add New Export</Dropdown.Item>
-                  <Dropdown.Item onClick={() => handleOpenConsoleModel('Handover')} > <FontAwesomeIcon icon={faArrowTurnRight} style={{ marginRight: '5px' }} />Handover to Console</Dropdown.Item>
-                  <Dropdown.Item onClick={() => handleOpenConsoleModel('Receive')} > <FontAwesomeIcon icon={faArrowCircleLeft} style={{ marginRight: '5px' }} />Receive from Console</Dropdown.Item>
-                  <Dropdown.Item onClick={() => openModalforCustomTp()} > <FontAwesomeIcon icon={faRefresh} style={{ marginRight: '5px' }} />Update Custom TP Number</Dropdown.Item>
-                  <Dropdown.Item onClick={() => openModalforCustomPctm()} > <FontAwesomeIcon icon={faRefresh} style={{ marginRight: '5px' }} />Update Custom PCTM Number</Dropdown.Item>
-                  <Dropdown.Item onClick={() => openModelforAirline()}> <FontAwesomeIcon icon={faArrowTurnRight} style={{ marginRight: '5px' }} />Handover to Airline</Dropdown.Item>
-                  <Dropdown.Item onClick={() => openModelforRedeposit()}>
-                    {" "}
-                    <FontAwesomeIcon
-                      icon={faArrowCircleLeft}
-                      style={{ marginRight: "5px" }}
+          {
+            loading && (
+              <div style={styles.overlay}>
+                <ReactLoading type="spin" color="#0000FF" height={300} width={80} />
+              </div>
+            )
+          }
+
+
+          <Card>
+            <CardBody>
+              <div className="row">
+                <div className="col-md-6">
+
+                </div>
+                <div className="col-md-6 d-flex justify-content-end">
+                  <div className="btn-group">
+
+
+
+                  </div>
+                </div>
+              </div>
+
+
+              <hr />
+              <form>
+                <Row>
+                  <Col md={4}>
+                    <FormGroup>
+                      <label className="forlabel" htmlFor="search">
+                        Search By
+                      </label>
+                      <input
+                        type="text"
+                        id="search"
+                        className="form-control"
+                        name="serNo"
+                        value={searchFilters.serNo}
+                        onChange={handleFilterChange}
+                      />
+                    </FormGroup>
+                  </Col>{" "}
+                  <Col md={4}>
+
+
+
+                    <Row md={6}>
+                      <Col md={6}>
+                        <label className="forlabel" htmlFor="startDate">
+                          Date From
+                        </label>
+                        <DatePicker
+                          selected={searchFilters.startDate}
+                          onChange={handleStartDateChange}
+                          dateFormat="dd/MM/yyyy"
+                          className="form-control border-right-0 inputField"
+                          customInput={<input style={{ width: '100%' }} />}
+                          wrapperClassName="custom-react-datepicker-wrapper"
+                        />
+                      </Col>
+
+                      <Col md={6}>
+                        <label className="forlabel" htmlFor="startDate">
+                          Date To
+                        </label>
+                        <DatePicker
+                          selected={searchFilters.endDate}
+                          onChange={handleEndDateChange}
+                          dateFormat="dd/MM/yyyy"
+                          className="form-control border-right-0 inputField"
+                          customInput={<input style={{ width: '100%' }} />}
+                          wrapperClassName="custom-react-datepicker-wrapper"
+                        />
+                      </Col>
+
+                    </Row>
+
+                  </Col>
+                  <Col md={4}>
+                    <FormGroup>
+                      <label className="forlabel" htmlFor="snzParcel">
+                        SNZ Parcel
+                      </label>
+                      <select
+                        id="snzParcel"
+                        name="snzParcel"
+                        className="form-control form-select"
+                        value={searchFilters.snzParcel}
+                        onChange={handleFilterChange}
+
+                      >
+                        <option value="">-Any-</option>
+                        <option value="Y">Yes</option>
+                        <option value="N">No</option>
+                      </select>
+                    </FormGroup>
+                  </Col>
+
+                </Row>
+                <Row>
+                  <Col md={4}>
+                    <FormGroup>
+                      <label className="forlabel" htmlFor="hold">
+                        Hold
+                      </label>
+                      <select
+                        id="hold"
+                        name="hold"
+                        className="form-control form-select"
+                        value={searchFilters.hold}
+                        onChange={handleFilterChange}
+
+                      >
+                        <option value="">-Any-</option>
+                        <option value="Y">Yes</option>
+                        <option value="N">No</option>
+                      </select>
+                    </FormGroup>
+                  </Col>
+
+                  <Col md={4}>
+                    <FormGroup>
+                      <label className="forlabel" htmlFor="Heavy">
+                        Forwarded
+                      </label>
+                      <select
+                        id="Heavy"
+                        name="heavy"
+                        className="form-control  form-select"
+                        value={searchFilters.heavy}
+                        onChange={handleFilterChange}
+                      >
+                        <option value="">-Any-</option>
+                        <option value="FWD_OUT">Yes</option>
+                        <option value="">No</option>
+                      </select>
+                    </FormGroup>
+                  </Col>
+                  <Col md={4}>
+                    <FormGroup>
+                      <label
+                        className="forlabel bold-label"
+                        htmlFor="dgdcStatus"
+                      >
+                        DGDC Status
+                      </label>
+                      <select
+                        id="dgdcStatus"
+                        className="form-control"
+                        name="dgdcStatus"
+                        value={searchFilters.dgdcStatus}
+                        onChange={handleFilterChange}
+                      >
+                        <option value="">Select DGDC Status</option>
+                        {JarListDtlDGDC.map((item) => (
+                          <option key={item.id} value={item.jarDtlDesc}>
+                            {item.jarDtlDesc}
+                          </option>
+                        ))}
+                      </select>
+                    </FormGroup>
+                  </Col>
+                </Row>
+
+
+                <Row>
+
+
+
+                  <Col className="text-center">
+                    <Button
+                      variant="outline-primary"
+                      style={{ marginLeft: "10px", marginTop: "10px" }}
+                      onClick={(e) => { search(searchFilters); setCurrentPageFun(); }}
+                    >
+                      <FontAwesomeIcon
+                        icon={faSearch}
+                        style={{ marginRight: "5px" }}
+                      />
+
+                      Search
+                    </Button>
+
+                    <Button
+
+                      variant="outline-danger"
+                      style={{ marginLeft: "10px", marginTop: "10px" }}
+                      onClick={handleClear}
+                    >
+                      <FontAwesomeIcon
+                        icon={faSyncAlt}
+                        style={{ marginRight: "5px" }}
+                      />
+                      Reset
+                    </Button>
+
+                  </Col>
+
+
+
+
+
+                </Row>
+              </form>
+            </CardBody>
+          </Card>
+          <Card>
+            <CardBody>
+
+
+              <div
+
+              >
+
+                <div className=" mt-1 table-responsive">
+                  <Table className="table table-bordered text-center custom-table mt-3">
+                    <thead>
+                      <tr>
+                        <th style={{ backgroundColor: '#BADDDA' }} scope="col">
+                          Sr.No
+                        </th>
+                        <th style={{ backgroundColor: '#BADDDA' }} scope="col">
+                          SB.No
+                        </th>
+                        <th style={{ backgroundColor: '#BADDDA' }} scope="col">
+                          SB.Date
+                        </th>
+                        <th style={{ backgroundColor: '#BADDDA' }} scope="col">
+                          ER No
+                        </th>
+                        <th style={{ backgroundColor: '#BADDDA' }} scope="col">
+                          ER Date
+                        </th>
+                        <th style={{ backgroundColor: '#BADDDA' }} scope="col">
+                          Exporter
+                        </th>
+                        <th style={{ backgroundColor: '#BADDDA' }} scope="col">
+                          Pkgs
+                        </th>
+                        <th style={{ backgroundColor: '#BADDDA' }} scope="col">
+                          Gross Wt
+                        </th>
+                        <th style={{ backgroundColor: '#BADDDA' }} scope="col">
+                          Parcel Status
+                        </th>
+                        <th style={{ backgroundColor: '#BADDDA' }} scope="col">
+                          DGDC Status
+                        </th>
+                        <th
+                          style={{ backgroundColor: '#BADDDA' }}
+                          className="text-center"
+                        >
+                          Action
+                        </th>
+                      </tr>
+                      <tr>
+                        <th style={{ backgroundColor: '#BADDDA' }} className="text-center">Total</th>
+                        <th style={{ backgroundColor: '#BADDDA' }} className="text-center">{filteredData.map((item) => item[0]).length}</th>
+                        <th style={{ backgroundColor: '#BADDDA' }} className="text-center"></th>
+                        <th style={{ backgroundColor: '#BADDDA' }} className="text-center"></th>
+                        <th style={{ backgroundColor: '#BADDDA' }} className="text-center"></th>
+                        <th style={{ backgroundColor: '#BADDDA' }} className="text-center"></th>
+                        <th style={{ backgroundColor: '#BADDDA' }} className="text-center">{filteredData.reduce((total, item) => total + item[4], 0)}</th>
+                        <th style={{ backgroundColor: '#BADDDA' }} className="text-center"></th>
+                        <th style={{ backgroundColor: '#BADDDA' }} className="text-center"></th>
+                        <th style={{ backgroundColor: '#BADDDA' }} className="text-center"></th>
+                        <th style={{ backgroundColor: '#BADDDA' }} className="text-center"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {currentItems.map((item, index) => (
+                        <tr key={index}>
+                          <td>{((currentPage - 1) * itemsPerPage) + index + 1}</td>
+                          <td>{item[0]}</td>
+                          <td>{formatDateTime(item[10])}</td>
+                          <td>{item[1]}</td>
+                          <td>{formatDateTime(item[2])}</td>
+                          <td>{getpartyId[item[3]]}</td>
+                          <td>{item[4]}</td>
+                          <td>{item[5]}</td>
+                          <td >{item[6]}</td>
+
+
+
+                          <td className="table-column" style={{ flexDirection: 'column', alignItems: 'center' }}>
+                            <span>{item[7]}</span>
+                            <div style={{ display: 'flex', flexDirection: 'row' }}>
+
+
+                              {item[8] === "Y" ? (
+                                <FaHandPaper size={22} color="orange" style={{ marginRight: '10px' }} title="On Hold" />
+                              ) : null}
+
+                              {item[9] === "Y" ? (
+                                <FaTruckLoading size={22} fill="orange" style={{ marginRight: '10px' }} title="Heavy Carriage" />
+                              ) : null}
+
+                              {item[14] === "FWD_OUT" ? (
+                                <FaArrowAltCircleRight size={22} fill="orange" style={{ marginRight: '10px' }} title="Forward Out" />
+                              ) : null}
+
+                              {item[13] === "Y" ? (
+
+                                <img src={snzLoge} className="img-fluid" alt="SNZ" width={25} height={25} title="SNZ Parcel" />
+
+                              ) : null}
+                            </div>
+
+                          </td>
+
+
+                          <td className="table-column">
+                            <div className="">
+                              <button type="button" className="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                <FontAwesomeIcon icon={faAtom} style={{ marginRight: '5px' }} />
+                                Action
+                              </button>
+                              <ul className="dropdown-menu">
+
+                                <li>
+                                  <button className="dropdown-item" onClick={() => { handleViewClick(item[0], item[1]) }}>
+                                    <FontAwesomeIcon icon={faEye} style={{ marginRight: '5px' }} />View All
+                                  </button>
+                                </li>
+
+                                {(logintype === 'Party' || logintype === 'Console') && (
+                                  <li>
+                                    <button className="dropdown-item" onClick={() => { handleERSlipPrint(item[0], item[1]) }}>
+                                      <FontAwesomeIcon icon={faReceipt} style={{ marginRight: '5px' }} />ER Slip
+                                    </button>
+                                  </li>
+                                )}
+
+                                <li>
+                                  <button className="dropdown-item" onClick={() => openModalforviewhistory(item[0], item[1])}>
+                                    <FontAwesomeIcon icon={faHistory} style={{ marginRight: "5px" }} />View Transaction History
+                                  </button>
+                                </li>
+                              </ul>
+                            </div>
+
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+
+                  </Table>
+                  <Pagination style={{ display: 'flex', justifyContent: 'center', color: 'gray' }}>
+                    <Pagination.First onClick={() => handlePageChange(1)} />
+                    <Pagination.Prev
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
                     />
-                    Redeposit
-                  </Dropdown.Item>
-                  {/*  <Dropdown.Item onClick={() => openModalforreceivefromcartingagent()}><FontAwesomeIcon icon={faArrowCircleLeft} style={{ marginRight: '5px' }} />Receive from Carting Agent</Dropdown.Item>
+                    <Pagination.Ellipsis />
+
+                    {displayPages().map((pageNumber) => (
+                      <Pagination.Item
+                        key={pageNumber}
+                        active={pageNumber === currentPage}
+                        onClick={() => handlePageChange(pageNumber)}
+                      >
+                        {pageNumber}
+                      </Pagination.Item>
+                    ))}
+
+                    <Pagination.Ellipsis />
+                    <Pagination.Next
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                    />
+                    <Pagination.Last onClick={() => handlePageChange(totalPages)} />
+                  </Pagination>
+
+                </div>
+
+
+              </div>
+            </CardBody>
+          </Card>
+        </>
+
+      ) :
+        (
+
+          <>
+            <h5 className="pageHead" style={{ fontFamily: 'Your-Heading-Font', paddingLeft: '2%', paddingRight: '-50px' }} > <FontAwesomeIcon
+              icon={faPlaneDeparture}
+              style={{
+                marginRight: '8px',
+                color: 'black', // Set the color to golden
+              }}
+            /> Export </h5>
+
+            {
+              loading && (
+                <div style={styles.overlay}>
+                  <ReactLoading type="spin" color="#0000FF" height={300} width={80} />
+                </div>
+              )
+            }
+
+
+            <Card>
+              <CardBody>
+                <div className="row">
+                  <div className="col-md-6">
+
+                  </div>
+                  <div className="col-md-6 d-flex justify-content-end">
+                    <div className="btn-group">
+                      <DropdownButton
+                        title={<span>
+
+                          <span>  <FontAwesomeIcon icon={faAtom} style={{ marginRight: "5px" }} />Action</span>
+                        </span>}
+                        style={{ float: 'right', background: 'none' }}
+                        variant="outline-success"
+                      >
+                        <Dropdown.Item onClick={() => handleOptionButtonClick("add")}>   <FontAwesomeIcon icon={faPlus} style={{ marginRight: "5px" }} />Add New Export</Dropdown.Item>
+                        <Dropdown.Item onClick={() => handleOpenConsoleModel('Handover')} > <FontAwesomeIcon icon={faArrowTurnRight} style={{ marginRight: '5px' }} />Handover to Console</Dropdown.Item>
+                        <Dropdown.Item onClick={() => handleOpenConsoleModel('Receive')} > <FontAwesomeIcon icon={faArrowCircleLeft} style={{ marginRight: '5px' }} />Receive from Console</Dropdown.Item>
+                        <Dropdown.Item onClick={() => openModalforCustomTp()} > <FontAwesomeIcon icon={faRefresh} style={{ marginRight: '5px' }} />Update Custom TP Number</Dropdown.Item>
+                        <Dropdown.Item onClick={() => openModalforCustomPctm()} > <FontAwesomeIcon icon={faRefresh} style={{ marginRight: '5px' }} />Update Custom PCTM Number</Dropdown.Item>
+                        <Dropdown.Item onClick={() => openModelforAirline()}> <FontAwesomeIcon icon={faArrowTurnRight} style={{ marginRight: '5px' }} />Handover to Airline</Dropdown.Item>
+                        <Dropdown.Item onClick={() => openModelforRedeposit()}>
+                          {" "}
+                          <FontAwesomeIcon
+                            icon={faArrowCircleLeft}
+                            style={{ marginRight: "5px" }}
+                          />
+                          Redeposit
+                        </Dropdown.Item>
+                        {/*  <Dropdown.Item onClick={() => openModalforreceivefromcartingagent()}><FontAwesomeIcon icon={faArrowCircleLeft} style={{ marginRight: '5px' }} />Receive from Carting Agent</Dropdown.Item>
                         <Dropdown.Item onClick={() => openModalforhandoverairline()}> <FontAwesomeIcon icon={faArrowTurnRight} style={{ marginRight: '5px' }} />Handover to Airline</Dropdown.Item>
                         <Dropdown.Item onClick={() => openModalforRedeposite()}>
                           {" "}
@@ -2004,412 +2541,426 @@ export default function ExportSHB() {
                           />
                           Redeposit
                         </Dropdown.Item> */}
-                </DropdownButton>
+                      </DropdownButton>
 
 
-              </div>
-            </div>
-          </div>
+                    </div>
+                  </div>
+                </div>
 
 
-          <hr />
-          <form>
-            <Row>
-              <Col md={4}>
-                <FormGroup>
-                  <label className="forlabel" htmlFor="search">
-                    Search By
-                  </label>
-                  <input
-                    type="text"
-                    id="search"
-                    className="form-control"
-                    name="serNo"
-                    value={searchFilters.serNo}
-                    onChange={handleFilterChange}
-                  />
-                </FormGroup>
-              </Col>{" "}
-              <Col md={4}>
-
-
-
-                <Row md={6}>
-                  <Col md={6}>
-                    <label className="forlabel" htmlFor="startDate">
-                      Date From
-                    </label>
-                    <DatePicker
-                      selected={searchFilters.startDate}
-                      onChange={handleStartDateChange}
-                      dateFormat="dd/MM/yyyy"
-                      className="form-control border-right-0 inputField"
-                      customInput={<input style={{ width: '100%' }} />}
-                      wrapperClassName="custom-react-datepicker-wrapper"
-                    />
-                  </Col>
-
-                  <Col md={6}>
-                    <label className="forlabel" htmlFor="startDate">
-                      Date To
-                    </label>
-                    <DatePicker
-                      selected={searchFilters.endDate}
-                      onChange={handleEndDateChange}
-                      dateFormat="dd/MM/yyyy"
-                      className="form-control border-right-0 inputField"
-                      customInput={<input style={{ width: '100%' }} />}
-                      wrapperClassName="custom-react-datepicker-wrapper"
-                    />
-                  </Col>
-
-                </Row>
-
-              </Col>
-              <Col md={4}>
-                <FormGroup>
-                  <label className="forlabel" htmlFor="snzParcel">
-                    SNZ Parcel
-                  </label>
-                  <select
-                    id="snzParcel"
-                    name="snzParcel"
-                    className="form-control form-select"
-                    value={searchFilters.snzParcel}
-                    onChange={handleFilterChange}
-
-                  >
-                    <option value="">-Any-</option>
-                    <option value="Y">Yes</option>
-                    <option value="N">No</option>
-                  </select>
-                </FormGroup>
-              </Col>
-
-            </Row>
-            <Row>
-              <Col md={4}>
-                <FormGroup>
-                  <label className="forlabel" htmlFor="hold">
-                    Hold
-                  </label>
-                  <select
-                    id="hold"
-                    name="hold"
-                    className="form-control form-select"
-                    value={searchFilters.hold}
-                    onChange={handleFilterChange}
-
-                  >
-                    <option value="">-Any-</option>
-                    <option value="Y">Yes</option>
-                    <option value="N">No</option>
-                  </select>
-                </FormGroup>
-              </Col>
-
-              <Col md={4}>
-                <FormGroup>
-                  <label className="forlabel" htmlFor="Heavy">
-                    Heavy
-                  </label>
-                  <select
-                    id="Heavy"
-                    name="heavy"
-                    className="form-control  form-select"
-                    value={searchFilters.heavy}
-                    onChange={handleFilterChange}
-                  >
-                    <option value="">-Any-</option>
-                    <option value="Y">Yes</option>
-                    <option value="N">No</option>
-                  </select>
-                </FormGroup>
-              </Col>
-              <Col md={4}>
-                <FormGroup>
-                  <label
-                    className="forlabel bold-label"
-                    htmlFor="dgdcStatus"
-                  >
-                    DGDC Status
-                  </label>
-                  <select
-                    id="dgdcStatus"
-                    className="form-control"
-                    name="dgdcStatus"
-                    value={searchFilters.dgdcStatus}
-                    onChange={handleFilterChange}
-                  >
-                    <option value="">Select DGDC Status</option>
-                    {JarListDtlDGDC.map((item) => (
-                      <option key={item.id} value={item.jarDtlDesc}>
-                        {item.jarDtlDesc}
-                      </option>
-                    ))}
-                  </select>
-                </FormGroup>
-              </Col>
-            </Row>
-
-
-            <Row>
+                <hr />
+                <form>
+                  <Row>
+                    <Col md={4}>
+                      <FormGroup>
+                        <label className="forlabel" htmlFor="search">
+                          Search By
+                        </label>
+                        <input
+                          type="text"
+                          id="search"
+                          className="form-control"
+                          name="serNo"
+                          value={searchFilters.serNo}
+                          onChange={handleFilterChange}
+                        />
+                      </FormGroup>
+                    </Col>{" "}
+                    <Col md={4}>
 
 
 
-              <Col className="text-center">
-                <Button
-                  variant="outline-primary"
-                  style={{ marginLeft: "10px", marginTop: "10px" }}
-                  onClick={(e) => { search(searchFilters); setCurrentPageFun(); }}
+                      <Row md={6}>
+                        <Col md={6}>
+                          <label className="forlabel" htmlFor="startDate">
+                            Date From
+                          </label>
+                          <DatePicker
+                            selected={searchFilters.startDate}
+                            onChange={handleStartDateChange}
+                            dateFormat="dd/MM/yyyy"
+                            className="form-control border-right-0 inputField"
+                            customInput={<input style={{ width: '100%' }} />}
+                            wrapperClassName="custom-react-datepicker-wrapper"
+                          />
+                        </Col>
+
+                        <Col md={6}>
+                          <label className="forlabel" htmlFor="startDate">
+                            Date To
+                          </label>
+                          <DatePicker
+                            selected={searchFilters.endDate}
+                            onChange={handleEndDateChange}
+                            dateFormat="dd/MM/yyyy"
+                            className="form-control border-right-0 inputField"
+                            customInput={<input style={{ width: '100%' }} />}
+                            wrapperClassName="custom-react-datepicker-wrapper"
+                          />
+                        </Col>
+
+                      </Row>
+
+                    </Col>
+                    <Col md={4}>
+                      <FormGroup>
+                        <label className="forlabel" htmlFor="snzParcel">
+                          SNZ Parcel
+                        </label>
+                        <select
+                          id="snzParcel"
+                          name="snzParcel"
+                          className="form-control form-select"
+                          value={searchFilters.snzParcel}
+                          onChange={handleFilterChange}
+
+                        >
+                          <option value="">-Any-</option>
+                          <option value="Y">Yes</option>
+                          <option value="N">No</option>
+                        </select>
+                      </FormGroup>
+                    </Col>
+
+                  </Row>
+                  <Row>
+                    <Col md={4}>
+                      <FormGroup>
+                        <label className="forlabel" htmlFor="hold">
+                          Hold
+                        </label>
+                        <select
+                          id="hold"
+                          name="hold"
+                          className="form-control form-select"
+                          value={searchFilters.hold}
+                          onChange={handleFilterChange}
+
+                        >
+                          <option value="">-Any-</option>
+                          <option value="Y">Yes</option>
+                          <option value="N">No</option>
+                        </select>
+                      </FormGroup>
+                    </Col>
+
+                    <Col md={4}>
+                      <FormGroup>
+                        <label className="forlabel" htmlFor="Heavy">
+                          Forwarded
+                        </label>
+                        <select
+                          id="Heavy"
+                          name="heavy"
+                          className="form-control  form-select"
+                          value={searchFilters.heavy}
+                          onChange={handleFilterChange}
+                        >
+                          <option value="">-Any-</option>
+                          <option value="FWD_OUT">Yes</option>
+                          <option value="">No</option>
+                        </select>
+                      </FormGroup>
+                    </Col>
+                    <Col md={4}>
+                      <FormGroup>
+                        <label
+                          className="forlabel bold-label"
+                          htmlFor="dgdcStatus"
+                        >
+                          DGDC Status
+                        </label>
+                        <select
+                          id="dgdcStatus"
+                          className="form-control"
+                          name="dgdcStatus"
+                          value={searchFilters.dgdcStatus}
+                          onChange={handleFilterChange}
+                        >
+                          <option value="">Select DGDC Status</option>
+                          {JarListDtlDGDC.map((item) => (
+                            <option key={item.id} value={item.jarDtlDesc}>
+                              {item.jarDtlDesc}
+                            </option>
+                          ))}
+                        </select>
+                      </FormGroup>
+                    </Col>
+                  </Row>
+
+
+                  <Row>
+
+
+
+                    <Col className="text-center">
+                      <Button
+                        variant="outline-primary"
+                        style={{ marginLeft: "10px", marginTop: "10px" }}
+                        onClick={(e) => { search(searchFilters); setCurrentPageFun(); }}
+                      >
+                        <FontAwesomeIcon
+                          icon={faSearch}
+                          style={{ marginRight: "5px" }}
+                        />
+
+                        Search
+                      </Button>
+
+                      <Button
+
+                        variant="outline-danger"
+                        style={{ marginLeft: "10px", marginTop: "10px" }}
+                        onClick={handleClear}
+                      >
+                        <FontAwesomeIcon
+                          icon={faSyncAlt}
+                          style={{ marginRight: "5px" }}
+                        />
+                        Reset
+                      </Button>
+
+                    </Col>
+
+
+
+
+
+                  </Row>
+                </form>
+              </CardBody>
+            </Card>
+            <Card>
+              <CardBody>
+
+
+                <div
+
                 >
-                  <FontAwesomeIcon
-                    icon={faSearch}
-                    style={{ marginRight: "5px" }}
-                  />
 
-                  Search
-                </Button>
-
-                <Button
-
-                  variant="outline-danger"
-                  style={{ marginLeft: "10px", marginTop: "10px" }}
-                  onClick={handleClear}
-                >
-                  <FontAwesomeIcon
-                    icon={faSyncAlt}
-                    style={{ marginRight: "5px" }}
-                  />
-                  Reset
-                </Button>
-
-              </Col>
-
-
-
-
-
-            </Row>
-          </form>
-        </CardBody>
-      </Card>
-      <Card>
-        <CardBody>
-
-
-          <div
-
-          >
-
-            <div className=" mt-1 table-responsive">
-              <Table className="table table-bordered text-center custom-table mt-3">
-                <thead>
-                  <tr>
-                    <th style={{ backgroundColor: '#BADDDA' }} scope="col">
-                      Sr.No
-                    </th>
-                    <th style={{ backgroundColor: '#BADDDA' }} scope="col">
-                      SB.No
-                    </th>
-                    <th style={{ backgroundColor: '#BADDDA' }} scope="col">
-                      SB.Date
-                    </th>
-                    <th style={{ backgroundColor: '#BADDDA' }} scope="col">
-                      ER No
-                    </th>
-                    <th style={{ backgroundColor: '#BADDDA' }} scope="col">
-                      ER Date
-                    </th>
-                    <th style={{ backgroundColor: '#BADDDA' }} scope="col">
-                      Exporter
-                    </th>
-                    <th style={{ backgroundColor: '#BADDDA' }} scope="col">
-                      Pkgs
-                    </th>
-                    <th style={{ backgroundColor: '#BADDDA' }} scope="col">
-                      Gross Wt
-                    </th>
-                    <th style={{ backgroundColor: '#BADDDA' }} scope="col">
-                      Parcel Status
-                    </th>
-                    <th style={{ backgroundColor: '#BADDDA' }} scope="col">
-                      DGDC Status
-                    </th>
-                    <th
-                      style={{ backgroundColor: '#BADDDA' }}
-                      className="text-center"
-                    >
-                      Action
-                    </th>
-                  </tr>
-                  <tr>
-                    <th style={{ backgroundColor: '#BADDDA' }} className="text-center">Total</th>
-                    <th style={{ backgroundColor: '#BADDDA' }} className="text-center">{filteredData.map((item) => item[0]).length}</th>
-                    <th style={{ backgroundColor: '#BADDDA' }} className="text-center"></th>
-                    <th style={{ backgroundColor: '#BADDDA' }} className="text-center"></th>
-                    <th style={{ backgroundColor: '#BADDDA' }} className="text-center"></th>
-                    <th style={{ backgroundColor: '#BADDDA' }} className="text-center"></th>
-                    <th style={{ backgroundColor: '#BADDDA' }} className="text-center">{filteredData.reduce((total, item) => total + item[4], 0)}</th>
-                    <th style={{ backgroundColor: '#BADDDA' }} className="text-center"></th>
-                    <th style={{ backgroundColor: '#BADDDA' }} className="text-center"></th>
-                    <th style={{ backgroundColor: '#BADDDA' }} className="text-center"></th>
-                    <th style={{ backgroundColor: '#BADDDA' }} className="text-center"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentItems.map((item, index) => (
-                    <tr key={index}>
-                      <td>{((currentPage - 1) * itemsPerPage) + index + 1}</td>
-                      <td>{item[0]}</td>
-                      <td>{formatDateTime(item[10])}</td>
-                      <td>{item[1]}</td>
-                      <td>{formatDateTime(item[2])}</td>
-                      <td>{getpartyId[item[3]]}</td>
-                      <td>{item[4]}</td>
-                      <td>{item[5]}</td>
-                      <td >{item[6]}</td>
-
-
-
-                      <td className="table-column" style={{ flexDirection: 'column', alignItems: 'center' }}>
-                        <span>{item[7]}</span>
-                        <div style={{ display: 'flex', flexDirection: 'row' }}>
-
-
-                          {item[8] === "Y" ? (
-                            <FaHandPaper size={22} color="orange" style={{ marginRight: '10px' }} title="On Hold" />
-                          ) : null}
-
-                          {item[9] === "Y" ? (
-                            <FaTruckLoading size={22} fill="orange" style={{ marginRight: '10px' }} title="Heavy Carriage" />
-                          ) : null}
-
-                          {item[13] === "Y" ? (
-
-                            <img src={snzLoge} className="img-fluid" alt="SNZ" width={25} height={25} title="SNZ Parcel" />
-
-                          ) : null}
-                        </div>
-
-                      </td>
-
-
-                      <td className="table-column">
-                        <div className="">
-                          <button type="button" className="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                            <FontAwesomeIcon icon={faAtom} style={{ marginRight: '5px' }} />
+                  <div className=" mt-1 table-responsive">
+                    <Table className="table table-bordered text-center custom-table mt-3">
+                      <thead>
+                        <tr>
+                          <th style={{ backgroundColor: '#BADDDA' }} scope="col">
+                            Sr.No
+                          </th>
+                          <th style={{ backgroundColor: '#BADDDA' }} scope="col">
+                            SB.No
+                          </th>
+                          <th style={{ backgroundColor: '#BADDDA' }} scope="col">
+                            SB.Date
+                          </th>
+                          <th style={{ backgroundColor: '#BADDDA' }} scope="col">
+                            ER No
+                          </th>
+                          <th style={{ backgroundColor: '#BADDDA' }} scope="col">
+                            ER Date
+                          </th>
+                          <th style={{ backgroundColor: '#BADDDA' }} scope="col">
+                            Exporter
+                          </th>
+                          <th style={{ backgroundColor: '#BADDDA' }} scope="col">
+                            Pkgs
+                          </th>
+                          <th style={{ backgroundColor: '#BADDDA' }} scope="col">
+                            Gross Wt
+                          </th>
+                          <th style={{ backgroundColor: '#BADDDA' }} scope="col">
+                            Parcel Status
+                          </th>
+                          <th style={{ backgroundColor: '#BADDDA' }} scope="col">
+                            DGDC Status
+                          </th>
+                          <th
+                            style={{ backgroundColor: '#BADDDA' }}
+                            className="text-center"
+                          >
                             Action
-                          </button>
-                          <ul className="dropdown-menu">
-                            <li>
-                              <button className="dropdown-item" onClick={() => { printBarcode(item[0], item[1], item[4], item[2], item[10], "N", "1232") }}>
-                                <FontAwesomeIcon icon={faPrint} style={{ marginRight: '5px' }} />Print SER
-                              </button>
-                            </li>
-                            <li>
-                              <button className="dropdown-item" onClick={() => { handleViewClick(item[0], item[1]) }}>
-                                <FontAwesomeIcon icon={faEye} style={{ marginRight: '5px' }} />View All
-                              </button>
-                            </li>
-                            <li>
-                              <button className="dropdown-item" onClick={() => { handleEditClick(item[0], item[1]) }}>
-                                <FontAwesomeIcon icon={faEdit} style={{ marginRight: '5px' }} />Edit
-                              </button>
-                            </li>
-                            <li>
-                              <button className="dropdown-item" onClick={() => { handleERSlipPrint(item[0], item[1]) }}>
-                                <FontAwesomeIcon icon={faReceipt} style={{ marginRight: '5px' }} />ER Slip
-                              </button>
-                            </li>
-                            {(item[8] === 'N' || item[8] === 'R') && (
-                              <li>
-                                <button className="dropdown-item" onClick={() => fetchHoldData(companyid, branchId, item[0], item[1])}>
-                                  <FontAwesomeIcon icon={faHand} style={{ marginRight: "5px" }} />Hold Parcel
-                                </button>
-                              </li>
-                            )}
+                          </th>
+                        </tr>
+                        <tr>
+                          <th style={{ backgroundColor: '#BADDDA' }} className="text-center">Total</th>
+                          <th style={{ backgroundColor: '#BADDDA' }} className="text-center">{filteredData.map((item) => item[0]).length}</th>
+                          <th style={{ backgroundColor: '#BADDDA' }} className="text-center"></th>
+                          <th style={{ backgroundColor: '#BADDDA' }} className="text-center"></th>
+                          <th style={{ backgroundColor: '#BADDDA' }} className="text-center"></th>
+                          <th style={{ backgroundColor: '#BADDDA' }} className="text-center"></th>
+                          <th style={{ backgroundColor: '#BADDDA' }} className="text-center">{filteredData.reduce((total, item) => total + item[4], 0)}</th>
+                          <th style={{ backgroundColor: '#BADDDA' }} className="text-center"></th>
+                          <th style={{ backgroundColor: '#BADDDA' }} className="text-center"></th>
+                          <th style={{ backgroundColor: '#BADDDA' }} className="text-center"></th>
+                          <th style={{ backgroundColor: '#BADDDA' }} className="text-center"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {currentItems.map((item, index) => (
+                          <tr key={index}>
+                            <td>{((currentPage - 1) * itemsPerPage) + index + 1}</td>
+                            <td>{item[0]}</td>
+                            <td>{formatDateTime(item[10])}</td>
+                            <td>{item[1]}</td>
+                            <td>{formatDateTime(item[2])}</td>
+                            <td>{getpartyId[item[3]]}</td>
+                            <td>{item[4]}</td>
+                            <td>{item[5]}</td>
+                            <td >{item[6]}</td>
 
-                            {item[8] === 'Y' && (
-                              <li>
-                                <button className="dropdown-item" onClick={() => fetchUnHoldData(companyid, branchId, item[0], item[1])}>
-                                  <FontAwesomeIcon icon={faHandFist} style={{ marginRight: "5px" }} />UnHold Parcel
+
+
+                            <td className="table-column" style={{ flexDirection: 'column', alignItems: 'center' }}>
+                              <span>{item[7]}</span>
+                              <div style={{ display: 'flex', flexDirection: 'row' }}>
+
+
+                                {item[8] === "Y" ? (
+                                  <FaHandPaper size={22} color="orange" style={{ marginRight: '10px' }} title="On Hold" />
+                                ) : null}
+
+                                {item[9] === "Y" ? (
+                                  <FaTruckLoading size={22} fill="orange" style={{ marginRight: '10px' }} title="Heavy Carriage" />
+                                ) : null}
+
+                                {item[14] === "FWD_OUT" ? (
+                                  <FaArrowAltCircleRight size={22} fill="orange" style={{ marginRight: '10px' }} title="Forward Out" />
+                                ) : null}
+
+                                {item[13] === "Y" ? (
+
+                                  <img src={snzLoge} className="img-fluid" alt="SNZ" width={25} height={25} title="SNZ Parcel" />
+
+                                ) : null}
+                              </div>
+
+                            </td>
+
+
+                            <td className="table-column">
+                              <div className="">
+                                <button type="button" className="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                  <FontAwesomeIcon icon={faAtom} style={{ marginRight: '5px' }} />
+                                  Action
                                 </button>
-                              </li>
-                            )}
-                            <li>
+                                <ul className="dropdown-menu">
+                                  <li>
+                                    <button className="dropdown-item" onClick={() => { printBarcode(item[0], item[1], item[4], item[2], item[10], "N", "1232") }}>
+                                      <FontAwesomeIcon icon={faPrint} style={{ marginRight: '5px' }} />Print SER
+                                    </button>
+                                  </li>
+                                  <li>
+                                    <button className="dropdown-item" onClick={() => { handleViewClick(item[0], item[1]) }}>
+                                      <FontAwesomeIcon icon={faEye} style={{ marginRight: '5px' }} />View All
+                                    </button>
+                                  </li>
+                                  <li>
+                                    <button className="dropdown-item" onClick={() => { handleEditClick(item[0], item[1]) }}>
+                                      <FontAwesomeIcon icon={faEdit} style={{ marginRight: '5px' }} />Edit
+                                    </button>
+                                  </li>
+                                  <li>
+                                    <button className="dropdown-item" onClick={() => { handleERSlipPrint(item[0], item[1]) }}>
+                                      <FontAwesomeIcon icon={faReceipt} style={{ marginRight: '5px' }} />ER Slip
+                                    </button>
+                                  </li>
+                                  {(item[8] === 'N' || item[8] === 'R') && (
+                                    <li>
+                                      <button className="dropdown-item" onClick={() => fetchHoldData(companyid, branchId, item[0], item[1])}>
+                                        <FontAwesomeIcon icon={faHand} style={{ marginRight: "5px" }} />Hold Parcel
+                                      </button>
+                                    </li>
+                                  )}
+
+                                  {item[8] === 'Y' && (
+                                    <li>
+                                      <button className="dropdown-item" onClick={() => fetchUnHoldData(companyid, branchId, item[0], item[1])}>
+                                        <FontAwesomeIcon icon={faHandFist} style={{ marginRight: "5px" }} />UnHold Parcel
+                                      </button>
+                                    </li>
+                                  )}
+                                  {/* <li>
                               <button className="dropdown-item" onClick={() => openModalforHeavyParcel(item[0], item[1])}>
                                 <FontAwesomeIcon icon={faWeightHanging} style={{ marginRight: "5px" }} />Tag Heavy Parcel
                               </button>
-                            </li>
-                            {(item[7] === 'Handed over to DGDC SHB' && (item[6] === 'Allow Export' || item[6] === 'Let Export') && item[8] !== 'Y') && (
-                              <li>
-                                <button className="dropdown-item" hidden={item[8] === 'Handed over to Console'} onClick={() => openModelForSingleCartingAgent(item[0], item[1], item[12])}>
-                                  <FontAwesomeIcon icon={faArrowTurnRight} style={{ marginRight: "5px" }} />Handover over to Console
-                                </button>
-                              </li>
-                            )}
-                            <li>
-                              <button className="dropdown-item" onClick={() => openModalforsetOverideNSDl(item[0], item[1], item[6])}>
-                                <FontAwesomeIcon icon={faEdit} style={{ marginRight: "5px" }} />Override Parcel Status
-                              </button>
-                            </li>
-                            <li>
-                              <button className="dropdown-item" onClick={() => openModalforImposePenalty(item[0], item[1])}>
-                                <FontAwesomeIcon icon={faGavel} style={{ marginRight: "5px" }} />Impose Penalty
-                              </button>
-                            </li>
-                            <li>
-                              <button className="dropdown-item" onClick={() => openModalforCancelParcel(item[0], item[1])}>
-                                <FontAwesomeIcon icon={faXmarkCircle} style={{ marginRight: "5px" }} />Cancel Parcel
-                              </button>
-                            </li>
-                            <li>
-                              <button className="dropdown-item" onClick={() => openModalforviewhistory(item[0], item[1])}>
-                                <FontAwesomeIcon icon={faHistory} style={{ marginRight: "5px" }} />View Transaction History
-                              </button>
-                            </li>
-                          </ul>
-                        </div>
+                            </li> */}
+                                  {(item[7] === 'Handed over to DGDC SHB' && (item[6] === 'Allow Export' || item[6] === 'Let Export') && item[8] !== 'Y') && (
+                                    <li>
+                                      <button className="dropdown-item" hidden={item[8] === 'Handed over to Console'} onClick={() => openModelForSingleCartingAgent(item[0], item[1], item[12])}>
+                                        <FontAwesomeIcon icon={faArrowTurnRight} style={{ marginRight: "5px" }} />Handover over to Console
+                                      </button>
+                                    </li>
+                                  )}
+                                  <li>
+                                    <button className="dropdown-item" onClick={() => openModalforsetOverideNSDl(item[0], item[1], item[6])}>
+                                      <FontAwesomeIcon icon={faEdit} style={{ marginRight: "5px" }} />Override Parcel Status
+                                    </button>
+                                  </li>
+                                  <li>
+                                    <button className="dropdown-item" onClick={() => openModalforImposePenalty(item[0], item[1])}>
+                                      <FontAwesomeIcon icon={faGavel} style={{ marginRight: "5px" }} />Impose Penalty
+                                    </button>
+                                  </li>
+                                  <li>
+                                    <button className="dropdown-item" onClick={() => openModalforCancelParcel(item[0], item[1])}>
+                                      <FontAwesomeIcon icon={faXmarkCircle} style={{ marginRight: "5px" }} />Cancel Parcel
+                                    </button>
+                                  </li>
+                                  <li>
+                                    <button className="dropdown-item" onClick={() => openModalforviewhistory(item[0], item[1])}>
+                                      <FontAwesomeIcon icon={faHistory} style={{ marginRight: "5px" }} />View Transaction History
+                                    </button>
+                                  </li>
+                                </ul>
+                              </div>
 
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
 
-              </Table>
-              <Pagination style={{ display: 'flex', justifyContent: 'center', color: 'gray' }}>
-                <Pagination.First onClick={() => handlePageChange(1)} />
-                <Pagination.Prev
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                />
-                <Pagination.Ellipsis />
+                    </Table>
+                    <Pagination style={{ display: 'flex', justifyContent: 'center', color: 'gray' }}>
+                      <Pagination.First onClick={() => handlePageChange(1)} />
+                      <Pagination.Prev
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1}
+                      />
+                      <Pagination.Ellipsis />
 
-                {displayPages().map((pageNumber) => (
-                  <Pagination.Item
-                    key={pageNumber}
-                    active={pageNumber === currentPage}
-                    onClick={() => handlePageChange(pageNumber)}
-                  >
-                    {pageNumber}
-                  </Pagination.Item>
-                ))}
+                      {displayPages().map((pageNumber) => (
+                        <Pagination.Item
+                          key={pageNumber}
+                          active={pageNumber === currentPage}
+                          onClick={() => handlePageChange(pageNumber)}
+                        >
+                          {pageNumber}
+                        </Pagination.Item>
+                      ))}
 
-                <Pagination.Ellipsis />
-                <Pagination.Next
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                />
-                <Pagination.Last onClick={() => handlePageChange(totalPages)} />
-              </Pagination>
+                      <Pagination.Ellipsis />
+                      <Pagination.Next
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                      />
+                      <Pagination.Last onClick={() => handlePageChange(totalPages)} />
+                    </Pagination>
 
-            </div>
+                  </div>
 
 
-          </div>
-        </CardBody>
-      </Card>
+                </div>
+              </CardBody>
+            </Card>
+          </>
+
+        )
+      }
+
+
+
+
+
+
 
 
 
@@ -3816,15 +4367,15 @@ export default function ExportSHB() {
                   <Row>
                     <Col md={4}>
                       <FormGroup>
-                      <label className="forlabel" htmlFor="startDate">
-                       Custom TP No.
-                      </label>
+                        <label className="forlabel" htmlFor="startDate">
+                          Custom TP No.
+                        </label>
                         <Input
                           type="text"
                           name="importType"
                           id="branchname"
                           value={customTP}
-                          onChange={(e)=>setcustomTP(e.target.value)}
+                          onChange={(e) => setcustomTP(e.target.value)}
                           className="inputField"
 
 
@@ -3834,7 +4385,7 @@ export default function ExportSHB() {
                     </Col>
                     <Col md={4}>
                       <label className="forlabel" htmlFor="startDate">
-                       Custom TP Date
+                        Custom TP Date
                       </label>
                       <DatePicker
                         selected={customTPDate}
@@ -3846,8 +4397,8 @@ export default function ExportSHB() {
                       />
                     </Col>
                     <Col md={4}>
-                  
-                      <Button id="singleConsoleSubmit" onClick={saveCustomTP} style={{marginTop:22}} variant="outline-primary">
+
+                      <Button id="singleConsoleSubmit" onClick={saveCustomTP} style={{ marginTop: 22 }} variant="outline-primary">
                         <FontAwesomeIcon icon={faCheck} style={{ marginRight: '5px' }} />
                         SUBMIT
                       </Button>
@@ -3966,8 +4517,8 @@ export default function ExportSHB() {
                     className="form-control form-select"
                     id="selectConsoleforCustomTP"
                     name="selectConsoleforCustomTP"
-                    value={selectConsoleforCustomTP}
-                    onChange={(e) => setselectConsoleforCustomTP(e.target.value)}
+                    value={selectConsoleforCustomPctm}
+                    onChange={handleSelectedPctm}
 
                   >
                     <option value="">Select Console</option>
@@ -3981,10 +4532,30 @@ export default function ExportSHB() {
                 </Col>
 
                 <Col>
+                  <select
+
+                    className="form-control form-select"
+                    id="selectPort"
+                    name="selectPort"
+                    value={selectPort}
+                    onChange={(e) => setselectPort(e.target.value)}
+
+                  >
+                    <option value="">Select Port Of Destination</option>
+                    {port.map((item, index) => (
+                      <option key={index} value={item}>{item}</option>
+                    ))
+
+                    }
+                  </select>
+
+                </Col>
+
+                <Col>
                   <Col >
                     <Button
                       variant="outline-success"
-                      onClick={() => getCustomTPData(selectConsoleforCustomTP)}
+                      onClick={() => getCustomPctmData(selectConsoleforCustomPctm,selectPort)}
                       id="override"
                     >
                       <FontAwesomeIcon icon={faSave} style={{ marginRight: "5px" }} />
@@ -3993,21 +4564,21 @@ export default function ExportSHB() {
                   </Col>
                 </Col>
               </Row>
-              {getExportdataForCTP.length > 0 && (
+              {getExportdataForCPctm.length>0 && (
                 <>
                   <hr />
                   <Row>
                     <Col md={4}>
                       <FormGroup>
-                      <label className="forlabel" htmlFor="startDate">
-                       Custom PCTM No.
-                      </label>
+                        <label className="forlabel" htmlFor="startDate">
+                          Custom PCTM No.
+                        </label>
                         <Input
                           type="text"
                           name="importType"
                           id="branchname"
                           value={customTP}
-                          onChange={(e)=>setcustomTP(e.target.value)}
+                          onChange={(e) => setcustomTP(e.target.value)}
                           className="inputField"
 
 
@@ -4017,7 +4588,7 @@ export default function ExportSHB() {
                     </Col>
                     <Col md={4}>
                       <label className="forlabel" htmlFor="startDate">
-                       Custom PCTM Date
+                        Custom PCTM Date
                       </label>
                       <DatePicker
                         selected={customTPDate}
@@ -4029,8 +4600,8 @@ export default function ExportSHB() {
                       />
                     </Col>
                     <Col md={4}>
-                  
-                      <Button id="singleConsoleSubmit" onClick={saveCustomTP} style={{marginTop:22}} variant="outline-primary">
+
+                      <Button id="singleConsoleSubmit" onClick={saveCustomPctm} style={{ marginTop: 22 }} variant="outline-primary">
                         <FontAwesomeIcon icon={faCheck} style={{ marginRight: '5px' }} />
                         SUBMIT
                       </Button>
@@ -4042,8 +4613,8 @@ export default function ExportSHB() {
                         <thead>
                           <tr>
                             <th style={{ backgroundColor: '#BADDDA' }} scope="col">
-                              <input type="checkbox" style={{ width: 17, height: 22, paddingBottom: 0 }} onChange={handleSelectAll1}
-                                checked={selectAll1} />
+                              <input type="checkbox" style={{ width: 17, height: 22, paddingBottom: 0 }} onChange={handleSelectAll4}
+                                checked={selectAll4} />
                             </th>
                             <th style={{ backgroundColor: '#BADDDA' }} scope="col">
                               SB No.
@@ -4077,10 +4648,10 @@ export default function ExportSHB() {
                           </tr>
                         </thead>
                         <tbody>
-                          {getExportdataForCTP.map((item, index) => (
+                          {getExportdataForCPctm.map((item, index) => (
                             <tr key={index}>
-                              <td><input type="checkbox" style={{ width: 17, height: 22, }} onChange={() => handleCheckboxChange1(item)}
-                                checked={selectedRows1.includes(item)} /></td>
+                              <td><input type="checkbox" style={{ width: 17, height: 22, }} onChange={() => handleCheckboxChange4(item)}
+                                checked={selectedRows4.includes(item)} /></td>
                               <td>{item.sbNo}</td>
                               <td>{item.airwayBillNo}</td>
                               <td>{item.hawb}</td>

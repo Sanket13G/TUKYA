@@ -162,7 +162,7 @@ const ManageParty = ({ parties = [] }) => {
           </CardBody>
         </Card>
         {filteredParties.length > 0 && (
-          <Table striped bordered responsive>
+          <Table className="table table-bordered text-center custom-table mt-3">
             <thead>
               <tr>
                 <th>Party ID</th>

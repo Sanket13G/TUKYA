@@ -741,7 +741,7 @@ export default function Party_Bill_Payments_Reports(props) {
   const navigate = useNavigate();
   const [selectedParty, setSelectedParty] = useState("");
   const [partys, setPartys] = useState([]);
-  const [startDate, setStartDate] = useState(null);
+  const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(new Date());
 
   const [invoiceDataParty, setInvoiceDataParty] = useState([]);
@@ -800,7 +800,7 @@ export default function Party_Bill_Payments_Reports(props) {
 
   const handleReset = () => {
     setSelectedParty("");
-    setStartDate(null);
+    setStartDate(new Date());
     setEndDate(new Date());
     setInvoicePartyDataTable(false);
     setInvoiceDataParty([]);
@@ -835,17 +835,11 @@ export default function Party_Bill_Payments_Reports(props) {
   const handlePrint = async () => {
 
 
-    if (startDate && endDate && !selectedParty) {
 
-
-
-      const requestData = new FormData();
-      requestData.append('formattedStartDate', formattedStartDate);
-      requestData.append('formattedEndDate', formattedEndDate);
 
 
       try {
-        const response = await axios.post(`http://${ipaddress}Invoice/Print1/${companyid}/${branchId}`, requestData);
+        const response = await axios.post(`http://${ipaddress}Invoice/SHBPartyBillPrint?companyId=${companyid}&branchId=${branchId}&startDate=${formatDateNew(startDate)}&endDate=${formatDateNew(endDate)}&partyId=${selectedParty}`);
 
 
         if (response.status === 200) {
@@ -887,61 +881,6 @@ export default function Party_Bill_Payments_Reports(props) {
       }
 
 
-    }
-
-    else if (startDate && endDate && selectedParty) {
-
-
-      const requestData = new FormData();
-      requestData.append('formattedStartDate', formattedStartDate);
-      requestData.append('formattedEndDate', formattedEndDate);
-      // console.log(companyid);
-
-      try {
-        const response = await axios.post(`http://${ipaddress}Invoice/Print2/${companyid}/${branchId}/${selectedParty}`, requestData)
-
-
-
-
-        if (response.status === 200) {
-
-          const base64PDF = response.data;
-
-          // Create a new window for displaying the PDF
-          const newWindow = window.open('', '_blank');
-
-          // Write the HTML content to the new window
-          newWindow.document.write(`
-            <!DOCTYPE html>
-            <html>
-            <head>
-              <title>PDF Viewer</title>
-              <style>
-                body {
-                  margin: 0;
-                  padding: 0;
-                  overflow: hidden;
-                }
-                embed {
-                  width: 100vw;
-                  height: 100vh;
-                }
-              </style>
-            </head>
-            <body>
-              <embed src="data:application/pdf;base64,${base64PDF}" type="application/pdf" width="100%" height="100%">
-            </body>
-            </html>
-          `);
-        } else {
-          throw new Error('Failed to generate PDF');
-        }
-      } catch (error) {
-      }
-
-    }
-
-
 
 
   };
@@ -956,15 +895,12 @@ export default function Party_Bill_Payments_Reports(props) {
   const handlePDF = async () => {
 
 
-    if (startDate && endDate && !selectedParty) {
 
-      const requestData = new FormData();
-      requestData.append('formattedStartDate', formattedStartDate);
-      requestData.append('formattedEndDate', formattedEndDate);
+
 
 
       try {
-        const response = await axios.post(`http://${ipaddress}Invoice/Print1/${companyid}/${branchId}`, requestData);
+        const response = await axios.post(`http://${ipaddress}Invoice/SHBPartyBillPrint?companyId=${companyid}&branchId=${branchId}&startDate=${formatDateNew(startDate)}&endDate=${formatDateNew(endDate)}&partyId=${selectedParty}`);
 
 
         if (response.status === 200) {
@@ -997,133 +933,39 @@ export default function Party_Bill_Payments_Reports(props) {
       } catch (error) {
       }
 
-    }
-
-
-    else if (startDate && endDate && selectedParty) {
-
-      const requestData = new FormData();
-      requestData.append('formattedStartDate', formattedStartDate);
-      requestData.append('formattedEndDate', formattedEndDate);
-
-
-      try {
-        const response = await axios.post(`http://${ipaddress}Invoice/Print2/${companyid}/${branchId}/${selectedParty}`, requestData);
-
-
-        if (response.status === 200) {
-          const pdfBase64 = response.data; // Assuming response.data contains the Base64-encoded PDF
-
-          // Create a Blob from the Base64 data
-          const pdfBlob = new Blob([Uint8Array.from(atob(pdfBase64), c => c.charCodeAt(0))], { type: 'application/pdf' });
-
-          // Create a URL for the Blob
-          const blobUrl = URL.createObjectURL(pdfBlob);
-
-          // Create an anchor element for downloading
-          const downloadLink = document.createElement('a');
-          downloadLink.href = blobUrl;
-          downloadLink.download = 'bill_invoice.pdf'; // Set the filename for the downloaded PDF
-          downloadLink.style.display = 'none';
-          document.body.appendChild(downloadLink);
-
-          // Trigger the download
-          downloadLink.click();
-
-          // Clean up
-          document.body.removeChild(downloadLink);
-          window.URL.revokeObjectURL(blobUrl);
-
-
-
-        } else {
-          throw new Error('Failed to generate PDF');
-        }
-      } catch (error) {
-      }
-
-    }
-
-
+    
   };
 
 
   const handleXLS = async () => {
-    if (startDate && endDate && !selectedParty) {
-      const requestData = new FormData();
-      requestData.append('formattedStartDate', formattedStartDate);
-      requestData.append('formattedEndDate', formattedEndDate);
-
+  
       try {
-        const response = await axios.post(`http://${ipaddress}Invoice/Excel1/${companyid}/${branchId}`, requestData);
+        const filename = `party-bill-payment-report.xlsx`;
 
-        if (response.status === 200) {
-          const xlsxBase64 = response.data; // Assuming response.data contains the Base64-encoded XLSX
+        const headers = {
+            headers: {
+                Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            },
+            responseType: 'blob',
+        };
+        const response = await axios.post(`http://${ipaddress}Invoice/SHBPartyBillPaymentexcel?companyId=${companyid}&branchId=${branchId}&startDate=${formatDateNew(startDate)}&endDate=${formatDateNew(endDate)}&partyId=${selectedParty}`, null, headers);
 
-          // Create a Blob from the Base64 data
-          const xlsxBlob = new Blob([Uint8Array.from(atob(xlsxBase64), c => c.charCodeAt(0))], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-
-          // Create a URL for the Blob
-          const blobUrl = URL.createObjectURL(xlsxBlob);
-
-          // Create an anchor element for downloading
-          const downloadLink = document.createElement('a');
-          downloadLink.href = blobUrl;
-          downloadLink.download = 'party-bill-payment-report.xlsx'; // Set the filename for the downloaded XLSX
-          downloadLink.style.display = 'none';
-          document.body.appendChild(downloadLink);
-
-          // Trigger the download
-          downloadLink.click();
-
-          // Clean up
-          document.body.removeChild(downloadLink);
-          window.URL.revokeObjectURL(blobUrl);
-
-        } else {
-          throw new Error('Failed to generate XLSX');
-        }
-      } catch (error) {
-        console.error(error);
-      }
-    } else if (startDate && endDate && selectedParty) {
-      const requestData = new FormData();
-      requestData.append('formattedStartDate', formattedStartDate);
-      requestData.append('formattedEndDate', formattedEndDate);
-
-      try {
-        const response = await axios.post(`http://${ipaddress}Invoice/Excel2/${companyid}/${branchId}/${selectedParty}`, requestData);
-
-        if (response.status === 200) {
-          const xlsxBase64 = response.data; // Assuming response.data contains the Base64-encoded XLSX
-
-          // Create a Blob from the Base64 data
-          const xlsxBlob = new Blob([Uint8Array.from(atob(xlsxBase64), c => c.charCodeAt(0))], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-
-          // Create a URL for the Blob
-          const blobUrl = URL.createObjectURL(xlsxBlob);
-
-          // Create an anchor element for downloading
-          const downloadLink = document.createElement('a');
-          downloadLink.href = blobUrl;
-          downloadLink.download = 'party-bill-payment-report.xlsx'; // Set the filename for the downloaded XLSX
-          downloadLink.style.display = 'none';
-          document.body.appendChild(downloadLink);
-
-          // Trigger the download
-          downloadLink.click();
-
-          // Clean up
-          document.body.removeChild(downloadLink);
-          window.URL.revokeObjectURL(blobUrl);
-
-
-        } else {
-          throw new Error('Failed to generate XLSX');
-        }
-      } catch (error) {
-        console.error(error);
-      }
+        const url = window.URL.createObjectURL(new Blob([response.data], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      }));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", filename);
+      document.body.appendChild(link);
+      link.click();
+      // Clean up
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
+  } catch (error) {
+      console.error("Error downloading XLSX: ", error);
+      toast.error("Something went wrong", {
+          autoClose: 700,
+      });
     }
   };
 
@@ -1178,12 +1020,21 @@ export default function Party_Bill_Payments_Reports(props) {
   const formattedStartDate = formatDate(startDate, "start");
   const formattedEndDate = formatDate(endDate, "end");
 
+  const formatDateNew = (inputDate) => {
+    const date = new Date(inputDate);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
   const fetchAllInvoiceData = () => {
-    fetch(
-      `http://${ipaddress}Invoice/invoiceAllDataOfParty?companyId=${companyid}&branchId=${branchId}&startDate=${formattedStartDate}&endDate=${formattedEndDate}`
+    axios.get(
+      `http://${ipaddress}Invoice/SHBPaymentData?companyId=${companyid}&branchId=${branchId}&startDate=${formatDateNew(startDate)}&endDate=${formatDateNew(endDate)}`
     )
-      .then((response) => response.json())
-      .then((data) => {
+     
+      .then((response) => {
+        const data = response.data;
         if (Array.isArray(data) && data.length > 0) {
           // Update the 'airlines' state with the fetched data
           setInvoiceDataParty(data);
@@ -1221,11 +1072,12 @@ export default function Party_Bill_Payments_Reports(props) {
 
     if (selectedParty) {
       // Make an API request here to fetch the list of airline names based on the provided criteria
-      fetch(
-        `http://${ipaddress}Invoice/invoiceDataOfParty?companyId=${companyid}&branchId=${branchId}&startDate=${formattedStartDate}&endDate=${formattedEndDate}&partyId=${selectedParty}`
+      axios.get(
+        `http://${ipaddress}Invoice/SHBPaymentData?companyId=${companyid}&branchId=${branchId}&startDate=${formatDateNew(startDate)}&endDate=${formatDateNew(endDate)}&partyId=${selectedParty}`
       )
-        .then((response) => response.json())
-        .then((data) => {
+      
+        .then((response) => {
+          const data = response.data;
           if (Array.isArray(data) && data.length > 0) {
             // Update the 'airlines' state with the fetched data
             setInvoiceDataParty(data);
@@ -1277,8 +1129,8 @@ export default function Party_Bill_Payments_Reports(props) {
   let totalClearedAmount = 0;
 
   invoiceDataParty.forEach((item) => {
-    totalInvoiceAmount += item.totalInvoiceAmount;
-    totalClearedAmount += item.clearedAmt;
+    totalInvoiceAmount += item[3];
+    totalClearedAmount += item[4];
   });
 
   // Calculate totalBalanceAmount separately
@@ -1421,15 +1273,15 @@ export default function Party_Bill_Payments_Reports(props) {
                       <tr>
                         <td>{index + 1}</td>
 
-                        <td>{getpartyId[item.partyId]}</td>
+                        <td>{item[0]}</td>
                         {/* <td>{item.partyId}</td> */}
-                        <td>{item.invoiceNO}</td>
-                        <td>{formatedDate(item.invoiceDate)}</td>
-                        <td>{item.totalInvoiceAmount}</td>
+                        <td>{item[1]}</td>
+                        <td>{formatedDate(item[2])}</td>
+                        <td>{item[3]}</td>
 
-                        <td>{item.clearedAmt}</td>
+                        <td>{item[4]}</td>
 
-                        <td>{item.totalInvoiceAmount - item.clearedAmt}</td>
+                        <td>{item[3] - item[4]}</td>
                       </tr>
                     </React.Fragment>
                   );

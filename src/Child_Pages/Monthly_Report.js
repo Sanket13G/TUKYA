@@ -97,15 +97,15 @@ export default function Monthly_Report() {
         let year = 0;
 
         if (startDate != null) {
-           
+
             month = startDate.getMonth() + 1;
-           
+
             year = startDate.getFullYear();
         }
 
         console.log(month, " ", year);
 
-        axios.get(`http://${ipaddress}Invoice/getMonthly/${companyid}/${branchId}/${month}/${year}`)
+        axios.get(`http://${ipaddress}Invoice/getSHBMonthly/${companyid}/${branchId}/${month}/${year}`)
             .then((response) => {
                 if (response.data != null && response.data != []) {
                     toast.success("Data found successfully.", {
@@ -215,211 +215,228 @@ export default function Monthly_Report() {
     };
 
 
-    const getExcel = (data) => {
+    const getExcel = async () => {
+        let month = 0;
+        let year = 0;
+
+        if (startDate != null) {
+
+            month = startDate.getMonth() + 1;
+
+            year = startDate.getFullYear();
+        }
+try {
         const filename = `Monthly_Report.xlsx`;
-        axios.post(`http://${ipaddress}Invoice/monthlyexcel`, data, { responseType: 'blob' })
-            .then(async (response) => {
-                const blob = new Blob([response.data], { type: response.headers['content-type'] });
 
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = filename;
-                document.body.appendChild(a);
-                a.click();
+        const headers = {
+            headers: {
+                Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            },
+            responseType: 'blob',
+        };
 
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
-            })
-            .catch((error) => {
-                toast.error("Something went wrong", {
-                    autoClose: 700
-                });
-            });
-    };
-    return (
-        <div className="Container">
-            <h5
-                className="pageHead"
+        const response = await axios.post(`http://${ipaddress}Invoice/SHBMonthlyexcel/${companyid}/${branchId}/${month}/${year}`, null, headers)
+        const url = window.URL.createObjectURL(new Blob([response.data], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        }));
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute("download", filename);
+        document.body.appendChild(link);
+        link.click();
+        // Clean up
+        link.parentNode.removeChild(link);
+        window.URL.revokeObjectURL(url);
+    } catch (error) {
+        console.error("Error downloading XLSX: ", error);
+        toast.error("Something went wrong", {
+            autoClose: 700,
+        });
+    }
+};
+return (
+    <div className="Container">
+        <h5
+            className="pageHead"
+            style={{
+                fontFamily: "Your-Heading-Font",
+                paddingLeft: "2%",
+                paddingRight: "-20px",
+            }}
+        >
+            {" "}
+            <FontAwesomeIcon
+                icon={faFileAlt}
                 style={{
-                    fontFamily: "Your-Heading-Font",
-                    paddingLeft: "2%",
-                    paddingRight: "-20px",
+                    marginRight: "8px",
+                    color: "black", // Set the color to golden
                 }}
-            >
-                {" "}
-                <FontAwesomeIcon
-                    icon={faFileAlt}
-                    style={{
-                        marginRight: "8px",
-                        color: "black", // Set the color to golden
-                    }}
-                />
-                Monthly Invoice Reports
-            </h5>
+            />
+            Monthly Invoice Reports
+        </h5>
 
-            <Card>
-                <CardBody>
-                    <Row>
-                        <Col md={3}>
-                            <FormGroup>
-                                <Label className="forlabel" for="branchId">
-                                    Select Month <span style={{ color: "red" }}>*</span>
-                                </Label>
-                                <div className="input-group">
-                                    <DatePicker
-                                        selected={startDate}
-                                        onChange={(date) => setStartDate(date)}
-                                        dateFormat="MMM-yyyy" // You can customize the date format
-                                        name="startDate"
-                                        showMonthYearPicker
-                                        required
-                                        className="form-control border-right-0 inputField"
-                                        customInput={<input style={{ width: "18vw" }} />}
+        <Card>
+            <CardBody>
+                <Row>
+                    <Col md={3}>
+                        <FormGroup>
+                            <Label className="forlabel" for="branchId">
+                                Select Month <span style={{ color: "red" }}>*</span>
+                            </Label>
+                            <div className="input-group">
+                                <DatePicker
+                                    selected={startDate}
+                                    onChange={(date) => setStartDate(date)}
+                                    dateFormat="MMM-yyyy" // You can customize the date format
+                                    name="startDate"
+                                    showMonthYearPicker
+                                    required
+                                    className="form-control border-right-0 inputField"
+                                    customInput={<input style={{ width: "18vw" }} />}
+                                />
+                            </div>
+                        </FormGroup>
+                    </Col>
+                    <Col md={4}>
+                        <Button
+                            type="button"
+                            className=""
+                            variant="outline-success"
+                            style={{ marginTop: "32px", marginRight: 10 }}
+                            onClick={getData}
+                        >
+                            <FontAwesomeIcon
+                                icon={faArrowsToEye}
+                                style={{ marginRight: "5px" }}
+                            />
+                            Show
+                        </Button>
+                        <Button
+                            type="button"
+                            className=""
+                            variant="outline-danger"
+                            style={{ marginTop: "32px" }}
+                            onClick={handleReset}
+                        >
+                            <FontAwesomeIcon
+                                icon={faRefresh}
+                                style={{ marginRight: "5px" }}
+                            />
+                            Reset
+                        </Button>
+
+
+                    </Col>
+                </Row>
+
+                <hr />
+
+                {(invoiceData.length > 0 && invoiceData != null) && (
+                    <>
+                        <Row>
+                            <Col className="text-end">
+
+                                <Button
+                                    type="button"
+                                    className=""
+                                    variant="outline-success"
+
+                                    onClick={() => getExcel(invoiceData)}
+                                >
+                                    <FontAwesomeIcon
+                                        icon={faFileExcel}
+                                        style={{ marginRight: "5px" }}
                                     />
-                                </div>
-                            </FormGroup>
-                        </Col>
-                        <Col md={4}>
-                            <Button
-                                type="button"
-                                className=""
-                                variant="outline-success"
-                                style={{ marginTop: "32px", marginRight: 10 }}
-                                onClick={getData}
-                            >
-                                <FontAwesomeIcon
-                                    icon={faArrowsToEye}
-                                    style={{ marginRight: "5px" }}
-                                />
-                                Show
-                            </Button>
-                            <Button
-                                type="button"
-                                className=""
-                                variant="outline-danger"
-                                style={{ marginTop: "32px" }}
-                                onClick={handleReset}
-                            >
-                                <FontAwesomeIcon
-                                    icon={faRefresh}
-                                    style={{ marginRight: "5px" }}
-                                />
-                                Reset
-                            </Button>
-
-
-                        </Col>
-                    </Row>
-
-                    <hr />
-
-                    {(invoiceData.length > 0 && invoiceData != null) && (
-                        <>
-                            <Row>
-                                <Col className="text-end">
-
-                                    <Button
-                                        type="button"
-                                        className=""
-                                        variant="outline-success"
-
-                                        onClick={() => getExcel(invoiceData)}
-                                    >
-                                        <FontAwesomeIcon
-                                            icon={faFileExcel}
-                                            style={{ marginRight: "5px" }}
-                                        />
-                                        XLS
-                                    </Button>
-                                </Col>
-                            </Row>
-                            <Row >
-                                <div className="table-responsive text-center" >
-                                    <Table
-                                        style={{ marginTop: 9 }}
-                                        className="table table-bordered text-center custom-table mt-3"
-                                    >
-                                        <thead>
-                                            <tr>
-                                                <th style={{ background: "#BADDDA", textAlign: 'center' }}>Sr. No</th>
-                                                <th style={{ background: "#BADDDA", textAlign: 'center' }}>Invoice No</th>
-                                                <th style={{ background: "#BADDDA", textAlign: 'center' }}>D/O</th>
-                                                <th style={{ background: "#BADDDA", textAlign: 'center' }}>D/O Date</th>
-                                                <th style={{ background: "#BADDDA", textAlign: 'center' }}>Invoice Date</th>
-                                                <th style={{ background: "#BADDDA", textAlign: 'center' }}>
-                                                    Customer Code
-                                                </th>
-                                                <th style={{ background: "#BADDDA", textAlign: 'center' }}>Customer</th>
-                                                <th style={{ background: "#BADDDA", textAlign: 'center' }}>Due Date </th>
-                                                <th style={{ background: "#BADDDA", textAlign: 'center' }}>Serial</th>
-                                                <th style={{ background: "#BADDDA", textAlign: 'center' }}>Challan No</th>
-                                                <th style={{ background: "#BADDDA", textAlign: 'center' }}>Product</th>
-                                                <th style={{ background: "#BADDDA", textAlign: 'center' }}>Total Invoice Value</th>
-                                                <th style={{ background: "#BADDDA", textAlign: 'center' }}>Rate</th>
-                                                <th style={{ background: "#BADDDA", textAlign: 'center' }}>IGST</th>
-                                                <th style={{ background: "#BADDDA", textAlign: 'center' }}>Amount</th>
+                                    XLS
+                                </Button>
+                            </Col>
+                        </Row>
+                        <Row >
+                            <div className="table-responsive text-center" >
+                                <Table
+                                    style={{ marginTop: 9 }}
+                                    className="table table-bordered text-center custom-table mt-3"
+                                >
+                                    <thead>
+                                        <tr>
+                                            <th style={{ background: "#BADDDA", textAlign: 'center' }}>Sr. No</th>
+                                            <th style={{ background: "#BADDDA", textAlign: 'center' }}>Invoice No</th>
+                                            <th style={{ background: "#BADDDA", textAlign: 'center' }}>D/O</th>
+                                            <th style={{ background: "#BADDDA", textAlign: 'center' }}>D/O Date</th>
+                                            <th style={{ background: "#BADDDA", textAlign: 'center' }}>Invoice Date</th>
+                                            <th style={{ background: "#BADDDA", textAlign: 'center' }}>
+                                                Customer Code
+                                            </th>
+                                            <th style={{ background: "#BADDDA", textAlign: 'center' }}>Customer</th>
+                                            <th style={{ background: "#BADDDA", textAlign: 'center' }}>Due Date </th>
+                                            <th style={{ background: "#BADDDA", textAlign: 'center' }}>Serial</th>
+                                            <th style={{ background: "#BADDDA", textAlign: 'center' }}>Challan No</th>
+                                            <th style={{ background: "#BADDDA", textAlign: 'center' }}>Product</th>
+                                            <th style={{ background: "#BADDDA", textAlign: 'center' }}>Total Invoice Value</th>
+                                            <th style={{ background: "#BADDDA", textAlign: 'center' }}>Rate</th>
+                                            <th style={{ background: "#BADDDA", textAlign: 'center' }}>IGST</th>
+                                            <th style={{ background: "#BADDDA", textAlign: 'center' }}>Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {currentItems.map((item, index) => (
+                                            <tr key={index}>
+                                                <td>{((currentPage - 1) * itemsPerPage) + index + 1}</td>
+                                                <td>{item.invoiceNO}</td>
+                                                <td>{item.invoiceNO}</td>
+                                                <td>{formatedDate(item.invoiceDate)}</td>
+                                                <td>{formatedDate(item.invoiceDate)}</td>
+                                                <td>{geterpId[item.partyId]}</td>
+                                                <td>{getpartyId[item.partyId]}</td>
+                                                <td>{formatedDate(item.invoiceDate)}</td>
+                                                <td></td>
+                                                <td>{item.invoiceNO}</td>
+                                                <td></td>
+                                                <td>{item.totalInvoiceAmount}</td>
+                                                <td>{item.taxPercentage}</td>
+                                                <td>{item.taxAmount}</td>
+                                                <td>{item.billAmount}</td>
                                             </tr>
-                                        </thead>
-                                        <tbody>
-                                            {currentItems.map((item, index) => (
-                                                <tr key={index}>
-                                                    <td>{((currentPage - 1) * itemsPerPage) + index + 1}</td>
-                                                    <td>{item.invoiceNO}</td>
-                                                    <td>{item.invoiceNO}</td>
-                                                    <td>{formatedDate(item.invoiceDate)}</td>
-                                                    <td>{formatedDate(item.invoiceDate)}</td>
-                                                    <td>{geterpId[item.partyId]}</td>
-                                                    <td>{getpartyId[item.partyId]}</td>
-                                                    <td>{formatedDate(item.invoiceDate)}</td>
-                                                    <td></td>
-                                                    <td>{item.invoiceNO}</td>
-                                                    <td></td>
-                                                    <td>{item.totalInvoiceAmount}</td>
-                                                    <td>{(item.igst === 'Y' || item.cgst === 'Y' || item.sgst === 'Y') ? '18.0' : '0.0'}</td>                                           
-                                                    <td>{(item.igst === 'Y' || item.cgst === 'Y' || item.sgst === 'Y') ? item.taxAmount : 0}</td>
-                                                    <td>{item.billAmount}</td>
-                                                </tr>
-                                            ))
+                                        ))
 
-                                            }
-                                        </tbody>
-                                    </Table>
-                                    <Pagination style={{ display: 'flex', justifyContent: 'center', color: 'gray' }}>
-                                        <Pagination.First onClick={() => handlePageChange(1)} />
-                                        <Pagination.Prev
-                                            onClick={() => handlePageChange(currentPage - 1)}
-                                            disabled={currentPage === 1}
-                                        />
-                                        <Pagination.Ellipsis />
+                                        }
+                                    </tbody>
+                                </Table>
+                                <Pagination style={{ display: 'flex', justifyContent: 'center', color: 'gray' }}>
+                                    <Pagination.First onClick={() => handlePageChange(1)} />
+                                    <Pagination.Prev
+                                        onClick={() => handlePageChange(currentPage - 1)}
+                                        disabled={currentPage === 1}
+                                    />
+                                    <Pagination.Ellipsis />
 
-                                        {displayPages().map((pageNumber) => (
-                                            <Pagination.Item
-                                                key={pageNumber}
-                                                active={pageNumber === currentPage}
-                                                onClick={() => handlePageChange(pageNumber)}
-                                            >
-                                                {pageNumber}
-                                            </Pagination.Item>
-                                        ))}
+                                    {displayPages().map((pageNumber) => (
+                                        <Pagination.Item
+                                            key={pageNumber}
+                                            active={pageNumber === currentPage}
+                                            onClick={() => handlePageChange(pageNumber)}
+                                        >
+                                            {pageNumber}
+                                        </Pagination.Item>
+                                    ))}
 
-                                        <Pagination.Ellipsis />
-                                        <Pagination.Next
-                                            onClick={() => handlePageChange(currentPage + 1)}
-                                            disabled={currentPage === totalPages}
-                                        />
-                                        <Pagination.Last onClick={() => handlePageChange(totalPages)} />
-                                    </Pagination>
-                                </div>
-                            </Row>
-                        </>
-                    )
+                                    <Pagination.Ellipsis />
+                                    <Pagination.Next
+                                        onClick={() => handlePageChange(currentPage + 1)}
+                                        disabled={currentPage === totalPages}
+                                    />
+                                    <Pagination.Last onClick={() => handlePageChange(totalPages)} />
+                                </Pagination>
+                            </div>
+                        </Row>
+                    </>
+                )
 
-                    }
-                </CardBody>
-            </Card>
+                }
+            </CardBody>
+        </Card>
 
 
-        </div>
-    )
+    </div>
+)
 }

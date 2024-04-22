@@ -60,7 +60,7 @@ export default function Forwardparcel() {
 
 
     const getImportlist = (sir,packnum) => {
-        if(!(sir.startsWith("IM") || sir.startsWith("D-IM") || sir.startsWith("D-EX"))){
+        if(!(sir.startsWith("IM") || sir.startsWith("D-IM") || sir.startsWith("D-EX") || sir.startsWith("EX"))){
            toast.error("Invalid Barcode Format",{
             autoClose:700
            })
@@ -73,8 +73,8 @@ export default function Forwardparcel() {
             .then((response) => {
                 // console.log("GET list response:", response.data);
                 setImportlist(response.data); // Store the list in the state
-                if (!(response.data.dgdcStatus === 'Handed over to DGDC SEEPZ')) {
-                    toast.error("Parcel should be enter in DGDC SEEPZ", {
+                if (!(response.data.dgdcStatus === 'Handed over to DGDC SHB')) {
+                    toast.error("Parcel should be enter in DGDC SHB", {
                         autoClose: 700
                     })
                     setGetSir('');
@@ -100,8 +100,8 @@ export default function Forwardparcel() {
             .then((response) => {
                 // console.log("GET list response:", response.data);
                 setImportlist(response.data); // Store the list in the state
-                if (!(response.data.dgdcStatus === 'Handed over to DGDC SEEPZ')) {
-                    toast.error("Parcel should be enter in DGDC SEEPZ", {
+                if (!(response.data.dgdcStatus === 'Handed over to DGDC SHB')) {
+                    toast.error("Parcel should be enter in DGDC SHB", {
                         autoClose: 700
                     })
                     setGetSir('');
@@ -127,8 +127,36 @@ export default function Forwardparcel() {
             .then((response) => {
                 // console.log("GET list response:", response.data);
                 setImportlist(response.data); // Store the list in the state
-                if (!(response.data.dgdcStatus === 'Handed over to DGDC SEEPZ')) {
-                    toast.error("Parcel should be enter in DGDC SEEPZ", {
+                if (!(response.data.dgdcStatus === 'Handed over to DGDC SHB')) {
+                    toast.error("Parcel should be enter in DGDC SHB", {
+                        autoClose: 700
+                    })
+                    setGetSir('');
+                    return;
+                }
+                getForwardOutdata1(sir,packnum);
+       
+            })
+            .catch((error) => {
+                console.error("GET list error:", error);
+                toast.error("Data not found", {
+                    autoClose: 700
+                })
+                setGetSir('');
+                return;
+                setGetSir('');
+                return;
+            });
+        }
+
+        if(sir.startsWith("EX")){
+            axios
+            .get(`http://${ipaddress}exportshb/byer/${companyid}/${branchId}/${sir}`)
+            .then((response) => {
+                // console.log("GET list response:", response.data);
+                setImportlist(response.data); // Store the list in the state
+                if (!(response.data.dgdcStatus === 'Handed over to DGDC SHB')) {
+                    toast.error("Parcel should be enter in DGDC SHB", {
                         autoClose: 700
                     })
                     setGetSir('');
@@ -308,7 +336,7 @@ export default function Forwardparcel() {
         const sir1 = getSir1.substring(0, index2).toUpperCase();
         const packnum1 = getSir1.substring(index2);
 
-        if(!(sir1.startsWith("IM") || sir1.startsWith("D-IM") || sir1.startsWith("D-EX"))){
+        if(!(sir1.startsWith("IM") || sir1.startsWith("D-IM") || sir1.startsWith("D-EX") ||  sir1.startsWith("EX"))){
             toast.error("Invalid Barcode Format",{
              autoClose:700
             })
