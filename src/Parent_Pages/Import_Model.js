@@ -13,6 +13,8 @@ import { faTrash } from '@fortawesome/free-solid-svg-icons';
 import { faCheck, faSave, faTimes, faSyncAlt } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate, useLocation } from "react-router-dom";
 import { ToastContainer, toast } from 'react-toastify';
+import ipaddress from "../Components/IpAddress";
+import axios from "axios";
 
 
 function Import_Model() {
@@ -184,7 +186,32 @@ function Import_Model() {
         findConsoles();
         findCHAs();
         findAirlines();
+        findPortOfDest();
     }, []);
+
+
+    // Port Data
+    const [portData, setPortData] = useState([]);
+    const [portName, setportName] = useState(null);
+
+
+    const findPortOfDest = async () => {
+        const response = await axios.get(`http://${ipaddress}jardetail/port/${companyid}`);
+        const portOption = response.data.map(port => ({
+            value: port.jarDtlDesc,
+            label: port.jarDtlId
+        }))
+        setPortData(portOption);
+    }
+
+
+    const handlePortChange = selectedOption => {
+        setportName(selectedOption);
+        setPortOrigin(selectedOption ? selectedOption.label : '');
+        setCountryOrigin(selectedOption ? selectedOption.value : '');
+    };
+
+
 
     const Handleback = () => {
         navigate(`/parent/import`, { state: { searchCriteria: searchCriteria, currentPage: currentPage } })
@@ -198,7 +225,7 @@ function Import_Model() {
         if (mawb3 && hawb3) {
             getByMAWBnoAndHAwb(companyid, branchId, transId3, mawb3, hawb3, sir3);
         };
-    }, [])
+    }, []);
 
     const getImportsOfMAWB = (compId, branchId, MAWBNo) => {
         Rate_Chart_Service.getByMAWBNo(compId, branchId, MAWBNo).then((res) => {
@@ -660,6 +687,17 @@ function Import_Model() {
             setSelectedParty(foundParty);
         }
     }, [parties, importerId]);
+
+
+    useEffect(() => {
+        const foundParty = portData.find(party => party.label === portOrigin);
+        if (foundParty) {
+            setportName(foundParty);
+        }
+    }, [portData, portOrigin]);
+
+
+
 
     useEffect(() => {
         const foundParty = consoles.find(consoles => consoles.value === consoleName);
@@ -1222,42 +1260,8 @@ function Import_Model() {
 
                         <Col md={3} >
                             <FormGroup>
-                                <Label className="forlabel" for="branchId">Country of Origin</Label>
-                                <Input
-                                    type="text" name="countryOrigin"
-                                    className="form-control"
-                                    placeholder="Enter a country of origin"
-                                    value={countryOrigin}
-                                    id={mawb3 && hawb3 ? 'service' : 'mawb'}
-                                    maxLength={30}
-                                    readOnly={mawb3 && hawb3}
-                                    onChange={(e) => setCountryOrigin(e.target.value)}
-                                    onBlur={(e) => {
-                                        const country = e.target.value;
-                                        if (!portOrigin) {
-                                            // Only update loginUserName if it's empty
-                                            setPortOrigin(country);
-                                        }
-                                    }}
-
-                                />
-                            </FormGroup>
-                        </Col>
-
-
-                    </Row>
-
-
-
-                    {/* 3rd */}
-
-                    <Row>
-
-
-                        <Col md={3} >
-                            <FormGroup>
                                 <Label className="forlabel" for="branchId">Port of Origin</Label>
-                                <Input
+                                {/* <Input
                                     type="text" name="portOrigin"
                                     className="form-control"
                                     placeholder="Enter Port"
@@ -1266,9 +1270,67 @@ function Import_Model() {
                                     maxLength={30}
                                     value={portOrigin}
                                     onChange={(e) => setPortOrigin(e.target.value)}
+                                /> */}
+
+
+                                <Select
+                                    options={portData}
+                                    value={portName}
+                                    onChange={handlePortChange}
+                                    placeholder="Select port of destination"
+                                    isClearable
+                                    isDisabled={mawb3 && hawb3}
+                                    styles={{
+                                        control: (provided, state) => ({
+                                            ...provided,
+                                            border: state.isFocused ? '1px solid #ccc' : '1px solid #ccc',
+                                            boxShadow: 'none',
+                                            '&:hover': {
+                                                border: '1px solid #ccc'
+                                            }
+                                        }),
+                                        indicatorSeparator: () => ({
+                                            display: 'none'
+                                        }),
+                                        dropdownIndicator: () => ({
+                                            display: 'none'
+                                        })
+                                    }}
                                 />
                             </FormGroup>
                         </Col>
+                    </Row>
+
+
+
+                    {/* 3rd */}
+
+                    <Row>
+                        <Col md={3} >
+                            <FormGroup>
+                                <Label className="forlabel" for="branchId">Country of Origin</Label>
+                                <Input
+                                    type="text" name="countryOrigin"
+                                    className="form-control"
+                                    placeholder="Country of origin"
+                                    value={countryOrigin}
+                                    id={'service'}
+                                    maxLength={30}
+                                    readOnly
+                                    onChange={(e) => setCountryOrigin(e.target.value)}
+                                    // onBlur={(e) => {
+                                    //     const country = e.target.value;
+                                    //     if (!portOrigin) {
+                                    //         setPortOrigin(country);
+                                    //     }
+                                    // }}
+                                    tabIndex='-1'
+                                />
+                            </FormGroup>
+                        </Col>
+
+
+
                         <Col md={3} >
                             <FormGroup>
                                 <Label className="forlabel" for="branchId">Select Console</Label>
@@ -1362,8 +1424,8 @@ function Import_Model() {
                                     className="form-control"
                                     value={city}
                                     onChange={(e) => setCity(e.target.value)}
-                                    id="service"
-                                    readOnly
+                                    id={importerId !== 'NONE' && mawb3 && hawb3 ? 'service' : ''}
+                                    readOnly={importerId !== 'NONE' || mawb3 && hawb3 ? true : false}
                                     tabIndex="-1"
                                 />
                             </FormGroup>
@@ -1416,8 +1478,8 @@ function Import_Model() {
                                     className="form-control"
                                     value={importernameOnParcel}
                                     onChange={(e) => setimporternameOnParcel(e.target.value)}
-                                    id="service"
-                                    readOnly={importerId !== 'NONE'}
+                                    id={importerId !== 'NONE' && mawb3 && hawb3 ? 'service' : ''}
+                                    readOnly={importerId !== 'NONE' && mawb3 && hawb3 ? true : false}
                                     tabIndex="-1"
                                 />
                             </FormGroup>

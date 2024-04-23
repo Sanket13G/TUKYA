@@ -306,6 +306,19 @@ function Import(props) {
     setChareprentativeArray(cartingsRepresentative);
   };
 
+
+
+  function arrayBufferToBase64(buffer) {
+    let binary = '';
+    const bytes = new Uint8Array(buffer);
+    const len = bytes.byteLength;
+    for (let i = 0; i < len; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return window.btoa(binary);
+  }
+
+
   // Single Party or Cha 
   const getDefaultChaofParty = async (userId) => {
 
@@ -1628,16 +1641,11 @@ function Import(props) {
         // console.log(response.status);
 
         if (response.status === 200) {
-          const contentType = response.headers['content-type'];
-          const blob = new Blob([response.data], { type: contentType });
-          const url = window.URL.createObjectURL(blob);
-          if (contentType === 'application/pdf') {
-            setPdfData({ url, contentType });
-            setImagensdlStatusDocs(null);
-          } else {
-            setImagensdlStatusDocs(url);
-            setPdfData(null);
-          }
+
+
+          setImagensdlStatusDocs(response);
+
+
         } else {
           throw new Error('Network response was not ok');
         }
@@ -1656,17 +1664,9 @@ function Import(props) {
         console.log(response.status);
 
         if (response.status === 200) {
-          const contentType = response.headers['content-type'];
 
-          if (contentType === 'application/pdf') {
-            // If the response is a PDF, set it to pdfData
-            setPdfData2(response.data);
-            setImagewrongDepositDocs(null); // Clear imageData
-          } else {
-            // If the response is an image, set it to imageData
-            setImagewrongDepositDocs(response.data);
-            setPdfData2(null); // Clear pdfData
-          }
+          setImagewrongDepositDocs(response); // Clear imageData
+
         } else {
           throw new Error('Network response was not ok');
         }
@@ -1678,43 +1678,7 @@ function Import(props) {
 
 
   const showDocumentModel22 = () => {
-
-    // Check if the response status is OK (200)
-    if (PdfData2) {
-      // Get the raw response data as base64-encoded string
-      const base64PDF = PdfData2;
-
-      // Create a new window for displaying the PDF
-      const newWindow = window.open('', '_blank');
-
-      // Write the HTML content to the new window
-      newWindow.document.write(`
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>PDF Viewer</title>
-      <style>
-        body {
-          margin: 0;
-          padding: 0;
-          overflow: hidden;
-        }
-        embed {
-          width: 100vw;
-          height: 100vh;
-        }
-      </style>
-    </head>
-    <body>
-      <embed src="data:application/pdf;base64,${base64PDF}" type="application/pdf" width="100%" height="100%">
-    </body>
-    </html>
-  `);
-    } else {
-
-      setdocumentModel2(true);
-
-    }
+    setdocumentModel2(true);
   };
 
 
@@ -6142,17 +6106,19 @@ function Import(props) {
                 icon={faTimes}
               />
             </button>
-            {
-              !pdfData ? (
-                <img
-                  src={ImagewrongDepositDocs}
-                  alt="Saved Image"
-                  onError={(e) => console.error('Error loading image:', e)}
-                  className="img-fluid"
-                />
-              ) : null
 
-            }
+            {ImagewrongDepositDocs && ImagewrongDepositDocs.headers['content-type'].startsWith('image/') ? (
+              <img src={window.URL.createObjectURL(new Blob([ImagewrongDepositDocs.data], { type: ImagewrongDepositDocs.headers['content-type'] }))} alt="Preview" style={{ maxWidth: '100%', height: '500px' }} />
+            ) : ImagewrongDepositDocs && ImagewrongDepositDocs.headers['content-type'] === 'application/pdf' ? (
+              <embed
+                src={`data:application/pdf;base64,${arrayBufferToBase64(ImagewrongDepositDocs.data)}`}
+                type="application/pdf"
+                width="100%"
+                height="500px"
+                onError={() => console.error('Error loading PDF')}
+              />) : (
+              <p>No image or PDF available</p>
+            )}
 
 
           </CardBody>
@@ -7189,13 +7155,31 @@ function Import(props) {
               <FontAwesomeIcon icon={faTimes} />
             </button>
             <hr />
-            {pdfData ? (
+            {/* {pdfData ? (
               <embed src={pdfData.url} type="application/pdf" width="100%" height="500px" />
             ) : ImagensdlStatusDocs ? (
               <img src={ImagensdlStatusDocs} alt="Saved Image" onError={(e) => console.error('Error loading image:', e)} className="img-fluid" style={{ maxWidth: '100%', height: '500px' }} />
             ) : (
               <p>No document available</p>
+            )} */}
+
+            {ImagensdlStatusDocs && ImagensdlStatusDocs.headers['content-type'].startsWith('image/') ? (
+              <img src={window.URL.createObjectURL(new Blob([ImagensdlStatusDocs.data], { type: ImagensdlStatusDocs.headers['content-type'] }))} alt="Preview" style={{ maxWidth: '100%', height: '500px' }} />
+            ) : ImagensdlStatusDocs && ImagensdlStatusDocs.headers['content-type'] === 'application/pdf' ? (
+              <embed
+                src={`data:application/pdf;base64,${arrayBufferToBase64(ImagensdlStatusDocs.data)}`}
+                type="application/pdf"
+                width="100%"
+                height="500px"
+                onError={() => console.error('Error loading PDF')}
+              />) : (
+              <p>No image or PDF available</p>
             )}
+
+
+
+
+
           </CardBody>
         </Card>
       </Modal>

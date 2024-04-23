@@ -252,8 +252,8 @@ function App() {
                                 path="/parent/showExport"
                                 element={<ShowExport />}
                               />
-<Route path="/child/combinedRepresentative" element={<CombinedRepresentative />} />
-<Route path="/child/packet-received-summary" element={<PacketReceivedSummary />} />
+                              <Route path="/child/combinedRepresentative" element={<CombinedRepresentative />} />
+                              <Route path="/child/packet-received-summary" element={<PacketReceivedSummary />} />
                               <Route path="/child/carting-agent" element={<Carting_Agent />} />
                               <Route path="/child/common" element={<Common />} />
                               <Route path="/child/export-personal-gate-pass" element={<Export_personal_gate_pass />} />

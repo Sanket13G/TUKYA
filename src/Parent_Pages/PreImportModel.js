@@ -13,6 +13,8 @@ import { faTrash } from '@fortawesome/free-solid-svg-icons';
 import { faCheck, faSave, faTimes, faSyncAlt } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate, useLocation } from "react-router-dom";
 import { ToastContainer, toast } from 'react-toastify';
+import axios from "axios";
+import ipaddress from "../Components/IpAddress";
 
 
 
@@ -185,7 +187,33 @@ function PreImportModel(props) {
         findConsoles();
         findCHAs();
         findAirlines();
+        findPortOfDest();
     }, []);
+
+
+    // Port Data
+    const [portData, setPortData] = useState([]);
+    const [portName, setportName] = useState(null);
+
+
+    const findPortOfDest = async () => {
+        const response = await axios.get(`http://${ipaddress}jardetail/port/${companyid}`);
+        const portOption = response.data.map(port => ({
+            value: port.jarDtlDesc,
+            label: port.jarDtlId
+        }))
+        setPortData(portOption);
+    };
+
+
+    const handlePortChange = selectedOption => {
+        setportName(selectedOption);
+        setPortOrigin(selectedOption ? selectedOption.label : '');
+        setCountryOrigin(selectedOption ? selectedOption.value : '');
+    };
+
+
+
 
     const Handleback = () => {
         navigate(`/parent/pre-import`, { state: { searchCriteria: searchCriteria, currentPage: currentPage } })
@@ -449,7 +477,7 @@ function PreImportModel(props) {
             setMopStatus(res.data.mopStatus);
             setcartingAgent(res.data.cartingAgent);
             setpartyRepresentativeId(res.data.partyRepresentativeId);
-           
+
         });
     };
 
@@ -611,6 +639,23 @@ function PreImportModel(props) {
     };
 
 
+    useEffect(() => {
+        const foundParty = portData.find(party => party.label === portOrigin);
+        if (foundParty) {
+            setportName(foundParty);
+        }
+    }, [portData, portOrigin]);
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -682,7 +727,7 @@ function PreImportModel(props) {
         return candidate.data.__isNew__ || labelLower.startsWith(inputLower);
     };
 
- 
+
 
 
 
@@ -883,7 +928,7 @@ function PreImportModel(props) {
     const handleDateChangeFlight = (date2) => {
         setFlightDate(date2);
     };
-  
+
     function handleInputChange(e) {
         const inputValue = e.target.value;
         const numericInput = inputValue.replace(/[^0-9.]/g, '');
@@ -1077,44 +1122,63 @@ function PreImportModel(props) {
                                 </div>
                             </FormGroup>
                         </Col>
+
+
+                        <Col md={3} >
+                            <FormGroup>
+                                <Label className="forlabel" for="branchId">Port of Origin</Label>
+                                <Select
+                                    options={portData}
+                                    value={portName}
+                                    onChange={handlePortChange}
+                                    placeholder="Select port of destination"
+                                    isClearable
+                                    isDisabled={mawb3 && hawb3}
+                                    styles={{
+                                        control: (provided, state) => ({
+                                            ...provided,
+                                            border: state.isFocused ? '1px solid #ccc' : '1px solid #ccc',
+                                            boxShadow: 'none',
+                                            '&:hover': {
+                                                border: '1px solid #ccc'
+                                            }
+                                        }),
+                                        indicatorSeparator: () => ({
+                                            display: 'none'
+                                        }),
+                                        dropdownIndicator: () => ({
+                                            display: 'none'
+                                        })
+                                    }}
+                                />
+                            </FormGroup>
+                        </Col>
+
+
                         <Col md={3} >
                             <FormGroup>
                                 <Label className="forlabel" for="branchId">Country of Origin</Label>
                                 <Input
                                     type="text" name="countryOrigin"
                                     className="form-control"
-                                    placeholder="Enter a country of origin"
+                                    placeholder="Country of origin"
                                     value={countryOrigin}
-                                    id={mawb3 && hawb3 ? 'service' : 'mawb'}
+                                    id={'service'}
                                     maxLength={30}
-                                    readOnly={mawb3 && hawb3}
+                                    readOnly
                                     onChange={(e) => setCountryOrigin(e.target.value)}
-                                    onBlur={(e) => {
-                                        const country = e.target.value;
-                                        if (!portOrigin) {
-                                            // Only update loginUserName if it's empty
-                                            setPortOrigin(country);
-                                        }
-                                    }}
+                                    // onBlur={(e) => {
+                                    //     const country = e.target.value;
+                                    //     if (!portOrigin) {
+                                    //         setPortOrigin(country);
+                                    //     }
+                                    // }}
+                                    tabIndex='-1'
                                 />
                             </FormGroup>
                         </Col>
 
-                        <Col md={3} >
-                            <FormGroup>
-                                <Label className="forlabel" for="branchId">Port of Origin</Label>
-                                <Input
-                                    type="text" name="portOrigin"
-                                    className="form-control"
-                                    placeholder="Enter Port"
-                                    id={mawb3 && hawb3 ? 'service' : 'mawb'}
-                                    readOnly={mawb3 && hawb3}
-                                    maxLength={30}
-                                    value={portOrigin}
-                                    onChange={(e) => setPortOrigin(e.target.value)}
-                                />
-                            </FormGroup>
-                        </Col>
+
                     </Row>
 
                     {/* 3rd */}
@@ -1210,8 +1274,8 @@ function PreImportModel(props) {
                                     className="form-control"
                                     value={city}
                                     onChange={(e) => setCity(e.target.value)}
-                                    id="service"
-                                    readOnly
+                                    id={importerId !== 'NONE' && mawb3 && hawb3 ? 'service' : ''}
+                                    readOnly={importerId !== 'NONE' && mawb3 && hawb3 ? true : false}
                                     tabIndex="-1"
                                 />
                             </FormGroup>
@@ -1226,8 +1290,8 @@ function PreImportModel(props) {
                                     className="form-control"
                                     value={iec}
                                     onChange={(e) => setIec(e.target.value)}
-                                    id="service"
-                                    readOnly
+                                    id={importerId !== 'NONE' && mawb3 && hawb3 ? 'service' : ''}
+                                    readOnly={importerId !== 'NONE' && mawb3 && hawb3 ? true : false}
                                     tabIndex="-1"
                                 />
                             </FormGroup>
@@ -1267,8 +1331,8 @@ function PreImportModel(props) {
                                     className="form-control"
                                     value={importernameOnParcel}
                                     onChange={(e) => setimporternameOnParcel(e.target.value)}
-                                    id="service"
-                                    readOnly={importerId !== 'NONE'}
+                                    id={importerId !== 'NONE' && mawb3 && hawb3 ? 'service' : ''}
+                                    readOnly={importerId !== 'NONE' && mawb3 && hawb3 ? true : false}
                                     tabIndex="-1"
                                 />
                             </FormGroup>

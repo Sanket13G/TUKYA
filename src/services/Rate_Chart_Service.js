@@ -411,7 +411,8 @@ class Rate_Chart_Service {
         MAWb:MAWb,
         HAWB:HAWB,
         sirNo:sirNo
-      }
+      },
+      responseType: 'arraybuffer' // Tell Axios to treat the response as binary data
     });
   };
 
@@ -424,7 +425,8 @@ class Rate_Chart_Service {
         MAWb:MAWb,
         HAWB:HAWB,
         sirNo:sirNo
-      }
+      },
+      responseType: 'arraybuffer' // Tell Axios to treat the response as binary data
     });
   }
 
